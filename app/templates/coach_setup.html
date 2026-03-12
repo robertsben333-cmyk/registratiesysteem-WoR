@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% block title %}Welzijnscoach instellen — WoR{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+  <div class="col-md-6 col-lg-5">
+    <div class="card shadow-sm">
+      <div class="card-body p-4">
+
+        <h5 class="mb-1">
+          {% if existing.naam %}Gegevens wijzigen{% else %}Welkom bij Welzijn op Recept{% endif %}
+        </h5>
+        <p class="text-muted small mb-4">
+          {% if existing.naam %}
+            Pas uw gegevens aan en klik op opslaan.
+          {% else %}
+            Vul uw naam en gegevens in. Deze worden onthouden voor volgende sessies.
+          {% endif %}
+        </p>
+
+        <form method="post">
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold" for="naam">Uw naam</label>
+            <input type="text" class="form-control" id="naam" name="naam"
+                   value="{{ existing.naam or '' }}"
+                   placeholder="Bijv. Marieke de Vries" required autofocus>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold" for="gemeente">Gemeente</label>
+            <select class="form-select" id="gemeente" name="gemeente" required>
+              <option value="">— Selecteer gemeente —</option>
+              {% for g in gemeenten %}
+              <option value="{{ g }}" {% if existing.gemeente == g %}selected{% endif %}>{{ g }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label fw-semibold" for="uren_per_week">
+              Uren per week besteed aan Welzijn op Recept
+            </label>
+            <div class="input-group">
+              <input type="number" class="form-control" id="uren_per_week" name="uren_per_week"
+                     min="0.5" max="40" step="0.5"
+                     value="{{ existing.uren_per_week or '' }}"
+                     placeholder="Bijv. 8" required>
+              <span class="input-group-text">uur/week</span>
+            </div>
+          </div>
+
+          {% if existing.coach_id %}
+          <div class="mb-3 p-2 rounded" style="background:#f8f9fa; border:1px solid #dee2e6">
+            <small class="text-muted d-block" style="font-size:.75rem">Uw coach-ID (eenmalig aangemaakt)</small>
+            <span class="fw-semibold" style="font-family:monospace;font-size:1.1rem;letter-spacing:.1em">{{ existing.coach_id }}</span>
+          </div>
+          {% endif %}
+
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-accent flex-grow-1">
+              {% if existing.naam %}Opslaan{% else %}Aan de slag{% endif %}
+            </button>
+            {% if existing.naam %}
+            <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary">Annuleren</a>
+            {% endif %}
+          </div>
+
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

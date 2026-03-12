@@ -1,0 +1,191 @@
+/* ── Kleurenpalet ────────────────────────────────────────────────────────── */
+:root {
+  --wor-primary:   #1E6F8E;
+  --wor-accent:    #E8933A;
+  --wor-light:     #F0F6FA;
+  --wor-success:   #28A062;
+  --wor-danger:    #D94F4F;
+  --wor-text:      #1E2D3D;
+  --wor-muted:     #6B7E93;
+  --wor-border:    #D6E4EE;
+  --wor-shadow:    0 2px 8px rgba(30,111,142,.10);
+}
+
+/* ── Base ────────────────────────────────────────────────────────────────── */
+body {
+  background-color: var(--wor-light);
+  color: var(--wor-text);
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-size: 0.95rem;
+}
+
+/* ── Navbar ──────────────────────────────────────────────────────────────── */
+.navbar {
+  background: linear-gradient(135deg, var(--wor-primary) 0%, #155672 100%) !important;
+  box-shadow: 0 2px 12px rgba(0,0,0,.18);
+  padding: 0.75rem 0;
+}
+.navbar-brand {
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: #fff !important;
+}
+.navbar-brand .accent { color: var(--wor-accent); }
+
+/* ── Cards ───────────────────────────────────────────────────────────────── */
+.card {
+  border: 1px solid var(--wor-border);
+  border-radius: 10px;
+  box-shadow: var(--wor-shadow);
+  background: #fff;
+}
+.card-header {
+  background: var(--wor-light);
+  border-bottom: 1px solid var(--wor-border);
+  border-radius: 10px 10px 0 0 !important;
+  font-weight: 600;
+  padding: 0.65rem 1rem;
+}
+
+/* ── Section headers ─────────────────────────────────────────────────────── */
+.section-header {
+  border-left: 4px solid var(--wor-primary);
+  background: linear-gradient(90deg, rgba(30,111,142,.07) 0%, transparent 100%);
+  padding: 0.55rem 1rem;
+  border-radius: 0 6px 6px 0;
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 1.2rem;
+  color: var(--wor-primary);
+}
+
+/* ── Buttons ─────────────────────────────────────────────────────────────── */
+.btn-primary {
+  background: var(--wor-primary);
+  border-color: var(--wor-primary);
+  font-weight: 500;
+}
+.btn-primary:hover, .btn-primary:focus {
+  background: #155672;
+  border-color: #155672;
+}
+.btn-accent {
+  background: var(--wor-accent);
+  border-color: var(--wor-accent);
+  color: #fff;
+  font-weight: 600;
+}
+.btn-accent:hover, .btn-accent:focus {
+  background: #d07d2f;
+  border-color: #d07d2f;
+  color: #fff;
+}
+.btn-outline-primary { color: var(--wor-primary); border-color: var(--wor-primary); }
+.btn-outline-primary:hover { background: var(--wor-primary); border-color: var(--wor-primary); }
+.btn-outline-secondary { color: var(--wor-muted); border-color: var(--wor-border); }
+
+/* ── Badges ──────────────────────────────────────────────────────────────── */
+.badge { font-size: 0.78rem; padding: 0.35em 0.65em; }
+.badge.bg-success { background: var(--wor-success) !important; }
+.badge.bg-danger  { background: var(--wor-danger)  !important; }
+
+/* ── VL status pills in homepage table ───────────────────────────────────── */
+.vl-badge {
+  display: block;
+  padding: 0.3em 0.6em;
+  border-radius: 20px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  text-decoration: none;
+  margin-bottom: 4px;
+  transition: opacity .15s;
+  text-align: center;
+}
+.vl-badge:hover { opacity: .82; }
+.vl-badge.done { background: #E6F4EE; color: var(--wor-success); border: 1px solid #aedbbb; }
+.vl-badge.todo { background: #FCEAEA; color: var(--wor-danger);  border: 1px solid #f0bdbd; }
+
+/* ── Table ───────────────────────────────────────────────────────────────── */
+.table th {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--wor-muted);
+  background: var(--wor-light);
+  border-bottom: 2px solid var(--wor-border);
+}
+.table td { vertical-align: middle; }
+.table-hover tbody tr:hover { background: #F5FAFD; }
+
+/* ── Forms ───────────────────────────────────────────────────────────────── */
+.form-label { font-weight: 500; font-size: 0.88rem; margin-bottom: 0.3rem; }
+.form-control, .form-select {
+  border-color: var(--wor-border);
+  font-size: 0.9rem;
+}
+.form-control:focus, .form-select:focus {
+  border-color: var(--wor-primary);
+  box-shadow: 0 0 0 .2rem rgba(30,111,142,.15);
+}
+.form-check-input:checked {
+  background-color: var(--wor-primary);
+  border-color: var(--wor-primary);
+}
+.form-range::-webkit-slider-thumb { background: var(--wor-primary); }
+.form-range::-moz-range-thumb     { background: var(--wor-primary); }
+
+/* ── Spinnenweb form rows ────────────────────────────────────────────────── */
+.sw-row { padding: 0.45rem 0; border-bottom: 1px solid #EEF3F7; }
+.sw-row:last-child { border-bottom: none; }
+.sw-num {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; border-radius: 50%;
+  font-size: 0.7rem; font-weight: 700; color: #fff; flex-shrink: 0;
+}
+.sw-score {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 34px; height: 26px; border-radius: 6px;
+  font-size: 0.85rem; font-weight: 700;
+  background: var(--wor-primary); color: #fff; flex-shrink: 0;
+}
+
+/* ── Page header strip ───────────────────────────────────────────────────── */
+.page-header {
+  background: linear-gradient(135deg, var(--wor-primary) 0%, #1A8CAB 100%);
+  color: #fff;
+  padding: 1rem 1.25rem;
+  border-radius: 10px;
+  margin-bottom: 1.5rem;
+}
+.page-header h5 { margin: 0; font-weight: 700; font-size: 1.1rem; }
+.page-header .sub { opacity: .8; font-size: 0.85rem; margin-top: 3px; }
+
+/* ── Spinnenweb chart container ──────────────────────────────────────────── */
+.spider-wrap {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.5rem 1rem;
+  border: 1px solid var(--wor-border);
+  box-shadow: var(--wor-shadow);
+  text-align: center;
+}
+
+/* ── Dim score summary pills ─────────────────────────────────────────────── */
+.dim-pill {
+  display: flex; align-items: center; gap: 8px;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid var(--wor-border);
+  background: #fff;
+  margin-bottom: 0.5rem;
+  font-size: 0.85rem;
+}
+.dim-pill .dim-name { flex: 1; font-weight: 500; }
+.dim-pill .dim-score {
+  font-weight: 700; font-size: 1rem; color: var(--wor-primary);
+  min-width: 32px; text-align: right;
+}
+
+/* ── Flash alerts ────────────────────────────────────────────────────────── */
+.alert-success { background: #E6F4EE; border-color: #aedbbb; color: #1a5c37; }
+.alert-danger  { background: #FCEAEA; border-color: #f0bdbd; color: #7a2222; }

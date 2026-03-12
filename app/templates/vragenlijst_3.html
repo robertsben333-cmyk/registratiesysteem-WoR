@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+{% from '_spinnenweb.html' import spinnenweb_form %}
+{% block title %}Vragenlijst 3 — {{ client.voornaam }}{% endblock %}
+
+{% macro val(field, fallback='') %}{{ (existing[field] if existing and existing[field] is not none else fallback) }}{% endmacro %}
+
+{% block content %}
+<div class="mb-3">
+  <a href="{{ url_for('main.index') }}" class="text-decoration-none text-muted small">← Terug naar overzicht</a>
+</div>
+
+<h5 class="mb-1">Vragenlijst 3 — Opvolgingsvragenlijst</h5>
+<p class="text-muted mb-1">Cliënt: <strong>{{ client.voornaam }}</strong>
+  {% if existing %}<span class="badge bg-success ms-2">&#10003; Eerder ingevuld</span>{% endif %}
+</p>
+<p class="text-muted small mb-4">Afgenomen circa drie maanden na het starten van de activiteit.</p>
+
+<form method="post">
+
+  <div class="section-header">A &nbsp; Activiteiten &amp; Outputs</div>
+  <div class="row g-3 mb-4">
+
+    <div class="col-md-6">
+      <label class="form-label">Doet u nog steeds mee aan de activiteit of voorziening? <span class="text-danger">*</span></label>
+      <select class="form-select" name="continuering" required onchange="toggleReden(this.value)">
+        <option value="">— Selecteer —</option>
+        {% for opt, lbl in [('ja_actief','Ja, nog steeds actief'),('ja_ander','Ja, maar een andere activiteit'),('nee_gestopt','Nee, gestopt'),('nee_nooit','Nee, nooit gestart')] %}
+          <option value="{{ opt }}" {{ 'selected' if val('continuering') == opt }}>{{ lbl }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-md-6" id="reden_wrap"
+         style="display:{{ 'block' if val('continuering') in ['nee_gestopt','nee_nooit'] else 'none' }}">
+      <label class="form-label">Voornaamste reden van stoppen</label>
+      <select class="form-select" name="reden_stoppen">
+        <option value="">— Selecteer —</option>
+        {% for opt in ['Activiteit paste toch niet bij mij','Praktische belemmeringen (vervoer, kosten, tijd)','Gezondheidsredenen','Activiteit bestaat niet meer','Anders'] %}
+          <option {{ 'selected' if val('reden_stoppen') == opt }}>{{ opt }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+  </div>
+
+  <div class="section-header">B &nbsp; Procesdata</div>
+  <div class="row g-3 mb-4">
+    <div class="col-md-8">
+      <label class="form-label">Heeft u op dit moment behoefte aan aanvullende ondersteuning of begeleiding?</label>
+      <select class="form-select" name="behoefte_ondersteuning">
+        <option value="">— Selecteer —</option>
+        {% for opt in ['Nee, het gaat goed','Ja, ik zou graag opnieuw contact met de welzijnscoach','Ja, ik denk dat ik professionele hulp nodig heb','Weet ik nog niet'] %}
+          <option {{ 'selected' if val('behoefte_ondersteuning') == opt }}>{{ opt }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+
+  <div class="section-header">C &nbsp; Deelnemerstevredenheid</div>
+  <div class="row g-3 mb-4">
+    <div class="col-md-4">
+      <label class="form-label">Welk cijfer geeft u het traject overall? (1-10)</label>
+      <div class="d-flex align-items-center gap-2">
+        <input type="range" class="form-range" min="1" max="10" step="1"
+               name="tevredenheidscijfer" id="tev_slider"
+               value="{{ val('tevredenheidscijfer', 5) }}"
+               oninput="document.getElementById('tev_lbl').textContent = this.value">
+        <span class="badge bg-secondary" id="tev_lbl" style="min-width:28px">
+          {{ val('tevredenheidscijfer', 5) }}
+        </span>
+      </div>
+      <div class="d-flex justify-content-between">
+        <small class="text-muted">1 — Zeer slecht</small>
+        <small class="text-muted">10 — Uitstekend</small>
+      </div>
+    </div>
+  </div>
+
+  {# Impact: Spinnenweb hermeting #}
+  <div class="section-header">D &nbsp; Impact — Spinnenweb hermeting</div>
+  {{ spinnenweb_form(sw_questions, existing) }}
+
+  {# Huisartsbezoeken #}
+  <div class="section-header mt-2">Huisartsbezoeken — hermeting</div>
+  <div class="row g-3 mb-4">
+    <div class="col-md-4">
+      <label class="form-label">Hoe vaak heeft u de afgelopen drie maanden de huisarts bezocht?</label>
+      <input type="number" min="0" class="form-control" name="huisartsbezoeken"
+             value="{{ val('huisartsbezoeken') }}" placeholder="Aantal keer">
+    </div>
+  </div>
+
+  <div class="d-flex gap-2">
+    <button type="submit" class="btn btn-primary">{{ 'Wijzigingen opslaan' if existing else 'Opslaan' }}</button>
+    <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary">Annuleren</a>
+  </div>
+
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleReden(val) {
+  document.getElementById('reden_wrap').style.display =
+    (val === 'nee_gestopt' || val === 'nee_nooit') ? '' : 'none';
+}
+
+function updateScore(el) {
+  document.getElementById('lbl_' + el.id).textContent = el.value;
+  recalcGroup(el);
+}
+
+function recalcGroup(el) {
+  const card = el.closest('.card');
+  if (!card) return;
+  const sliders = card.querySelectorAll('.sw-slider');
+  let sum = 0, count = 0;
+  sliders.forEach(s => { sum += parseInt(s.value); count++; });
+  const avgEl = card.querySelector('[id^="avg_"]');
+  if (avgEl) avgEl.textContent = 'Gemiddelde: ' + (sum / count).toFixed(1);
+}
+
+document.querySelectorAll('.sw-slider').forEach(s => recalcGroup(s));
+</script>
+{% endblock %}

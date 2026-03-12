@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block title %}Cliënt toevoegen — WoR{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-5">
+    <div class="card">
+      <div class="card-body p-4">
+        <h5 class="mb-3">Nieuwe cliënt toevoegen</h5>
+
+        <form method="post" id="client-form">
+          <div class="mb-3">
+            <label for="voornaam" class="form-label">Voornaam</label>
+            <input type="text" class="form-control" id="voornaam" name="voornaam"
+                   value="{{ voornaam or '' }}"
+                   placeholder="Bijv. Anna" autofocus required>
+            <div id="voornaam-hint" class="form-text"></div>
+          </div>
+
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">Opslaan</button>
+            <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary">Annuleren</a>
+          </div>
+        </form>
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const input = document.getElementById('voornaam');
+const hint  = document.getElementById('voornaam-hint');
+
+function checkVoornaam() {
+  const val = input.value.trim();
+  const parts = val.split(/\s+/);
+  if (parts.length < 2 || !parts[1]) {
+    hint.textContent = '';
+    hint.className = 'form-text';
+    return true;
+  }
+  const second = parts[1].replace(/\.$/, '');
+  if (parts.length > 2 || second.length > 1) {
+    hint.textContent = 'Voer alleen de voornaam in, geen achternaam. Gebruik een initiaal (bijv. "Anna V.") als er al een cliënt met dezelfde voornaam bestaat.';
+    hint.className = 'form-text text-danger';
+    return false;
+  } else {
+    hint.textContent = 'Initiaal toegestaan als er al een cliënt met deze voornaam bestaat.';
+    hint.className = 'form-text text-warning';
+    return true;
+  }
+}
+
+input.addEventListener('input', checkVoornaam);
+
+document.getElementById('client-form').addEventListener('submit', function(e) {
+  if (!checkVoornaam()) e.preventDefault();
+});
+</script>
+{% endblock %}

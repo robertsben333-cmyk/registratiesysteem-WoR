@@ -1,0 +1,168 @@
+{% extends 'base.html' %}
+{% from '_spinnenweb.html' import spinnenweb_view %}
+{% block title %}Spinnenweb Opvolging — {{ client.voornaam }}{% endblock %}
+
+{% block content %}
+<div class="mb-3">
+  <a href="{{ url_for('main.index') }}" class="text-decoration-none text-muted small">← Terug naar overzicht</a>
+</div>
+
+<div class="page-header mb-4">
+  <h5>Vragenlijst 3 — Opvolging (3 maanden)</h5>
+  <div class="sub">Cliënt: {{ client.voornaam }}</div>
+</div>
+
+{# ── Radar Chart ──────────────────────────────────────────────────────────── #}
+<div class="row g-4 mb-4">
+  <div class="col-md-6">
+    <div class="spider-wrap">
+      <p class="text-muted small mb-2" style="font-size:.8rem">
+        Spinnenweb hermeting
+        {% if scores1 %}
+          <span class="ms-3">
+            <span style="display:inline-block;width:12px;height:3px;background:#1E6F8E;vertical-align:middle;border-radius:2px"></span> Nulmeting (VL1)
+            &nbsp;
+            <span style="display:inline-block;width:12px;height:3px;background:#E8933A;vertical-align:middle;border-radius:2px"></span> Hermeting (VL3)
+          </span>
+        {% endif %}
+      </p>
+      <canvas id="radarChart" width="380" height="340"></canvas>
+    </div>
+  </div>
+
+  <div class="col-md-6 d-flex flex-column gap-2 justify-content-center">
+    {% set dim_colors = {
+      'Lichaamsfuncties':       '#DC3545',
+      'Mentaal welbevinden':    '#17A2B8',
+      'Zingeving':              '#6F42C1',
+      'Kwaliteit van leven':    '#E8933A',
+      'Meedoen':                '#E8933A',
+      'Dagelijks functioneren': '#28A062'
+    } %}
+    {% for dim in sw_questions %}
+      {% set dc = dim_colors.get(dim, '#1E6F8E') %}
+      {% set sc3 = scores.get(dim) %}
+      {% set sc1 = scores1.get(dim) if scores1 else none %}
+      <div class="dim-pill">
+        <span class="dim-dot" style="background:{{ dc }}; width:10px; height:10px; border-radius:50%; flex-shrink:0"></span>
+        <span class="dim-name">{{ dim }}</span>
+        {% if sc1 is not none %}
+          <span class="text-muted" style="font-size:.78rem; min-width:56px; text-align:right">
+            {{ sc1 }} → <strong style="color:{{ dc }}">{{ sc3 if sc3 is not none else '—' }}</strong>
+          </span>
+        {% else %}
+          <span class="dim-score" style="color:{{ dc }}">{{ sc3 if sc3 is not none else '—' }}</span>
+        {% endif %}
+      </div>
+    {% endfor %}
+    {% if scores1 %}
+      <p class="text-muted mt-1 mb-0" style="font-size:.75rem">Nulmeting → Hermeting per dimensie</p>
+    {% endif %}
+  </div>
+</div>
+
+{# ── Spinnenweb tabel ────────────────────────────────────────────────────── #}
+{{ spinnenweb_view(sw_questions, row, label='Individuele scores hermeting (VL3)') }}
+{% if vl1_row %}
+  {{ spinnenweb_view(sw_questions, vl1_row, label='Individuele scores nulmeting (VL1)') }}
+{% endif %}
+
+{# ── Overige gegevens ────────────────────────────────────────────────────── #}
+<div class="card mb-4">
+  <div class="card-header">Opvolgingsgegevens</div>
+  <div class="card-body">
+    <div class="row g-3">
+      <div class="col-sm-6 col-md-4">
+        <div class="text-muted small">Continuering activiteit</div>
+        <div class="fw-semibold">{{ row.continuering or '—' }}</div>
+        {% if row.reden_stoppen %}
+          <div class="text-muted small">Reden: {{ row.reden_stoppen }}</div>
+        {% endif %}
+      </div>
+      <div class="col-sm-6 col-md-4">
+        <div class="text-muted small">Behoefte aan verdere ondersteuning</div>
+        <div class="fw-semibold">{{ row.behoefte_ondersteuning or '—' }}</div>
+      </div>
+      <div class="col-sm-6 col-md-4">
+        <div class="text-muted small">Tevredenheidscijfer</div>
+        <div class="fw-semibold" style="font-size:1.1rem; color:var(--wor-primary)">
+          {{ row.tevredenheidscijfer if row.tevredenheidscijfer is not none else '—' }}
+          <span class="text-muted fw-normal" style="font-size:.8rem">/ 10</span>
+        </div>
+      </div>
+      <div class="col-sm-6 col-md-4">
+        <div class="text-muted small">Huisartsbezoeken (afgelopen 3 mnd)</div>
+        <div class="fw-semibold">{{ row.huisartsbezoeken if row.huisartsbezoeken is not none else '—' }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="d-flex gap-2">
+  <a href="{{ url_for('main.vragenlijst_3', client_id=client.id) }}" class="btn btn-outline-primary btn-sm">Bewerken</a>
+  <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary btn-sm">Terug naar overzicht</a>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='chart.umd.min.js') }}"></script>
+<script>
+const DIMS     = {{ sw_questions.keys() | list | tojson }};
+const SCORES3  = {{ scores_list | tojson }};
+const SCORES1  = {{ scores1_list | tojson }};
+
+const ctx = document.getElementById('radarChart').getContext('2d');
+
+const datasets = [];
+
+if (SCORES1.some(v => v !== null)) {
+  datasets.push({
+    label: 'Nulmeting (VL1)',
+    data: SCORES1,
+    backgroundColor: 'rgba(30,111,142,0.10)',
+    borderColor: '#1E6F8E',
+    borderWidth: 2,
+    borderDash: [5, 3],
+    pointBackgroundColor: '#1E6F8E',
+    pointRadius: 4,
+  });
+}
+
+datasets.push({
+  label: 'Hermeting (VL3)',
+  data: SCORES3,
+  backgroundColor: 'rgba(232,147,58,0.15)',
+  borderColor: '#E8933A',
+  borderWidth: 2.5,
+  pointBackgroundColor: '#E8933A',
+  pointRadius: 5,
+  pointHoverRadius: 7,
+});
+
+new Chart(ctx, {
+  type: 'radar',
+  data: { labels: DIMS, datasets },
+  options: {
+    responsive: true,
+    scales: {
+      r: {
+        min: 0, max: 10,
+        ticks: { stepSize: 2, font: { size: 11 } },
+        pointLabels: { font: { size: 11 } },
+        grid: { color: 'rgba(0,0,0,0.07)' },
+        angleLines: { color: 'rgba(0,0,0,0.1)' },
+      }
+    },
+    plugins: {
+      legend: { display: SCORES1.some(v => v !== null), position: 'bottom',
+                labels: { font: { size: 11 }, padding: 16 } },
+      tooltip: {
+        callbacks: {
+          label: ctx => ' ' + ctx.dataset.label + ': ' + (ctx.parsed.r !== null ? ctx.parsed.r.toFixed(1) : '—')
+        }
+      }
+    }
+  }
+});
+</script>
+{% endblock %}

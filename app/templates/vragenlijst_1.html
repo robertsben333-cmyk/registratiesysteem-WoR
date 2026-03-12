@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+{% from '_spinnenweb.html' import spinnenweb_form %}
+{% block title %}Vragenlijst 1 — {{ client.voornaam }}{% endblock %}
+
+{% macro val(field, fallback='') %}{{ (existing[field] if existing and existing[field] is not none else fallback) }}{% endmacro %}
+
+{% block content %}
+<div class="mb-3">
+  <a href="{{ url_for('main.index') }}" class="text-decoration-none text-muted small">← Terug naar overzicht</a>
+</div>
+
+<h5 class="mb-1">Vragenlijst 1 — Intake</h5>
+<p class="text-muted mb-4">Cliënt: <strong>{{ client.voornaam }}</strong>
+  {% if existing %}<span class="badge bg-success ms-2">&#10003; Eerder ingevuld</span>{% endif %}
+</p>
+
+<form method="post">
+
+  <div class="section-header">1 &nbsp; Activiteiten &amp; Outputs</div>
+  <div class="row g-3 mb-4">
+
+    {# Verwijzer #}
+    <div class="col-md-6">
+      <label class="form-label">Door wie verwezen?</label>
+      <select class="form-select" name="verwijzer" id="verwijzer_sel" onchange="toggleHuisarts(this.value)">
+        <option value="">— Selecteer —</option>
+        {% for opt in ['Huisarts','POH-GGZ','Huisartsenpraktijk (team)','Fysiotherapeut','Maatschappelijk werker','Andere sociaal werker of welzijnsorganisatie','Wijkteam','Zelfverwijzing','Anders'] %}
+          <option {{ 'selected' if val('verwijzer') == opt }}>{{ opt }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-md-6" id="huisarts_wrap"
+         style="display:{{ 'block' if val('verwijzer') == 'Huisarts' else 'none' }}">
+      <label class="form-label">Welke huisartsenpraktijk?</label>
+      <input type="text" class="form-control" name="huisartsenpraktijk"
+             value="{{ val('huisartsenpraktijk') }}" placeholder="Naam praktijk">
+    </div>
+
+    {# Demografie #}
+    <div class="col-md-3">
+      <label class="form-label">Geslacht</label>
+      <select class="form-select" name="geslacht">
+        <option value="">— Selecteer —</option>
+        {% for opt in ['Man','Vrouw','Anders','Zeg ik liever niet'] %}
+          <option {{ 'selected' if val('geslacht') == opt }}>{{ opt }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-md-3">
+      <label class="form-label">Leeftijdscategorie</label>
+      <select class="form-select" name="leeftijdscategorie">
+        <option value="">— Selecteer —</option>
+        {% for opt in ['18-30','31-45','46-60','61-75','75+'] %}
+          <option {{ 'selected' if val('leeftijdscategorie') == opt }}>{{ opt }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-md-3">
+      <label class="form-label">Woonsituatie</label>
+      <select class="form-select" name="woonsituatie">
+        <option value="">— Selecteer —</option>
+        {% for opt in ['Alleen','Met partner','Met gezin','Anders'] %}
+          <option {{ 'selected' if val('woonsituatie') == opt }}>{{ opt }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-md-3">
+      <label class="form-label">Werkstatus</label>
+      <select class="form-select" name="werkstatus">
+        <option value="">— Selecteer —</option>
+        {% for opt in ['Betaald werk (loondienst of zelfstandig)','Vrijwilligerswerk','Student','Werkzoekend','Arbeidsongeschikt','Gepensioneerd','Anders'] %}
+          <option {{ 'selected' if val('werkstatus') == opt }}>{{ opt }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-md-6">
+      <label class="form-label">Eerder ondersteuning ontvangen via WoR of welzijnscoach?</label>
+      <select class="form-select" name="eerder_hulp">
+        <option value="">— Selecteer —</option>
+        {% for opt in ['Nee, eerste keer','Ja, eerder bij WoR','Ja, andere welzijnsondersteuning','Ja, beide'] %}
+          <option {{ 'selected' if val('eerder_hulp') == opt }}>{{ opt }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+  </div>
+
+  {# Impact: Spinnenweb nulmeting #}
+  <div class="section-header">2 &nbsp; Impact — Spinnenweb nulmeting</div>
+  {{ spinnenweb_form(sw_questions, existing) }}
+
+  {# Huisartsbezoeken #}
+  <div class="section-header mt-2">3 &nbsp; Huisartsbezoeken — nulmeting</div>
+  <div class="row g-3 mb-4">
+    <div class="col-md-4">
+      <label class="form-label">Hoe vaak heeft u de afgelopen drie maanden de huisarts bezocht?</label>
+      <input type="number" min="0" class="form-control" name="huisartsbezoeken"
+             value="{{ val('huisartsbezoeken') }}" placeholder="Aantal keer">
+    </div>
+  </div>
+
+  <div class="d-flex gap-2">
+    <button type="submit" class="btn btn-primary">{{ 'Wijzigingen opslaan' if existing else 'Opslaan' }}</button>
+    <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary">Annuleren</a>
+  </div>
+
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleHuisarts(val) {
+  document.getElementById('huisarts_wrap').style.display = val === 'Huisarts' ? '' : 'none';
+}
+
+function updateScore(el) {
+  document.getElementById('lbl_' + el.id).textContent = el.value;
+  recalcGroup(el);
+}
+
+function recalcGroup(el) {
+  // Find all sliders in same card
+  const card = el.closest('.card');
+  if (!card) return;
+  const sliders = card.querySelectorAll('.sw-slider');
+  let sum = 0, count = 0;
+  sliders.forEach(s => { sum += parseInt(s.value); count++; });
+  const avgEl = card.querySelector('[id^="avg_"]');
+  if (avgEl) avgEl.textContent = 'Gemiddelde: ' + (sum / count).toFixed(1);
+}
+
+// Init on load
+document.querySelectorAll('.sw-slider').forEach(s => recalcGroup(s));
+</script>
+{% endblock %}

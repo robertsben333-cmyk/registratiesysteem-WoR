@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% block title %}Vragenlijst 2 — {{ client.voornaam }}{% endblock %}
+
+{% macro row(label, value) %}
+<tr>
+  <td class="text-muted small" style="width:45%">{{ label }}</td>
+  <td>{{ value or '—' }}</td>
+</tr>
+{% endmacro %}
+
+{% block content %}
+<div class="mb-3">
+  <a href="{{ url_for('main.index') }}" class="text-decoration-none text-muted small">
+    ← Terug naar overzicht
+  </a>
+</div>
+
+<div class="d-flex align-items-center gap-3 mb-4">
+  <div>
+    <h5 class="mb-0">Vragenlijst 2 — Uitstroom bij welzijnscoach</h5>
+    <small class="text-muted">Cliënt: <strong>{{ client.voornaam }}</strong> &nbsp;·&nbsp;
+    Ingevuld op: {{ vl2.ingevuld_op[:10] if vl2.ingevuld_op else '—' }}</small>
+  </div>
+  <span class="badge bg-success ms-auto">&#10003; Ingevuld</span>
+</div>
+
+<!-- Sectie A -->
+<div class="card mb-3">
+  <div class="card-header fw-semibold">A &nbsp; Activiteiten &amp; Outputs</div>
+  <div class="card-body p-0">
+    <table class="table table-sm mb-0">
+      <tbody>
+        {{ row('Hoofdreden aanmelding', vl2.hoofdreden) }}
+        {{ row('Uitstroom naar vervolgaanbod', vl2.uitstroom_naar) }}
+        {{ row('Geslacht', vl2.geslacht) }}
+        {{ row('Leeftijdscategorie', vl2.leeftijdscategorie) }}
+        {{ row('Woonsituatie', vl2.woonsituatie) }}
+        {{ row('Werkstatus', vl2.werkstatus) }}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Sectie B -->
+<div class="card mb-4">
+  <div class="card-header fw-semibold">B &nbsp; Procesdata</div>
+  <div class="card-body p-0">
+    <table class="table table-sm mb-0">
+      <tbody>
+        {{ row('Datum verwijzing', vl2.datum_verwijzing) }}
+        {{ row('Datum intake', vl2.datum_intake) }}
+        {{ row('Datum start activiteit', vl2.datum_start_activiteit) }}
+        {{ row('Uren face-to-face contact (incl. admin)', vl2.contactmomenten_ff) }}
+        {{ row('Uren telefonisch contact (incl. admin)', vl2.contactmomenten_tel) }}
+        {{ row('Uitval', vl2.uitval_ja_nee) }}
+        {% if vl2.uitval_ja_nee == 'ja' %}
+          {{ row('Reden uitval', vl2.uitval_reden) }}
+        {% endif %}
+        {{ row('Doorverwezen', vl2.doorverwezen_ja_nee) }}
+        {% if vl2.doorverwezen_ja_nee == 'ja' %}
+          {{ row('Doorverwezen naar', vl2.doorverwezen_naar) }}
+        {% endif %}
+        {{ row('Terugkoppeling aan verwijzer', vl2.terugkoppeling) }}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary">← Terug naar overzicht</a>
+{% endblock %}

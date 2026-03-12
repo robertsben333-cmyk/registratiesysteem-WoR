@@ -1,0 +1,226 @@
+{% extends 'base.html' %}
+{% block title %}Vragenlijst 2 — {{ client.voornaam }}{% endblock %}
+
+{# Helper: get value from existing row or fallback #}
+{% macro val(field, fallback='') %}{{ (existing[field] if existing and existing[field] is not none else fallback) }}{% endmacro %}
+
+{% block content %}
+<div class="mb-3">
+  <a href="{{ url_for('main.index') }}" class="text-decoration-none text-muted small">← Terug naar overzicht</a>
+</div>
+
+<h5 class="mb-1">Vragenlijst 2 — Uitstroom bij welzijnscoach</h5>
+<p class="text-muted mb-4">Cliënt: <strong>{{ client.voornaam }}</strong>
+  {% if existing %}<span class="badge bg-success ms-2">&#10003; Eerder ingevuld</span>{% endif %}
+</p>
+
+<form method="post">
+
+  <div class="section-header">A &nbsp; Activiteiten &amp; Outputs</div>
+  <div class="row g-3 mb-4">
+
+    <div class="col-md-6">
+      <label class="form-label">Hoofdreden aanmelding <span class="text-danger">*</span></label>
+      <select class="form-select" name="hoofdreden" required>
+        <option value="">— Selecteer —</option>
+        {% for opt in ['Eenzaamheid','Somberheid of angst','Stress of overbelasting','Verlies van zingeving','Financiële zorgen','Problemen in relatie of gezin','Lichamelijke klachten met sociaal component','Anders'] %}
+          <option {{ 'selected' if val('hoofdreden') == opt }}>{{ opt }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-md-6">
+      <label class="form-label">Uitstroom naar vervolgaanbod</label>
+      <select class="form-select" name="uitstroom_naar">
+        <option value="">— Selecteer —</option>
+        {% for opt in ['Geen vervolgaanbod','Vrijwilligerswerk','Sport/beweeggroep','Sociale activiteit','Cursus of workshop','Maatschappelijke dienstverlening','Anders'] %}
+          <option {{ 'selected' if val('uitstroom_naar') == opt }}>{{ opt }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-md-3">
+      <label class="form-label">Geslacht</label>
+      <select class="form-select" name="geslacht">
+        <option value="">— Selecteer —</option>
+        {% for opt in ['Man','Vrouw','Anders','Zeg ik liever niet'] %}
+          <option {{ 'selected' if val('geslacht') == opt }}>{{ opt }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-md-3">
+      <label class="form-label">Leeftijdscategorie</label>
+      <select class="form-select" name="leeftijdscategorie">
+        <option value="">— Selecteer —</option>
+        {% for opt in ['18-30','31-45','46-60','61-75','75+'] %}
+          <option {{ 'selected' if val('leeftijdscategorie') == opt }}>{{ opt }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-md-3">
+      <label class="form-label">Woonsituatie</label>
+      <select class="form-select" name="woonsituatie">
+        <option value="">— Selecteer —</option>
+        {% for opt in ['Alleen','Met partner','Met gezin','Anders'] %}
+          <option {{ 'selected' if val('woonsituatie') == opt }}>{{ opt }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-md-3">
+      <label class="form-label">Werkstatus</label>
+      <select class="form-select" name="werkstatus">
+        <option value="">— Selecteer —</option>
+        {% for opt in ['Betaald werk (loondienst of zelfstandig)','Vrijwilligerswerk','Student','Werkzoekend','Arbeidsongeschikt','Gepensioneerd','Anders'] %}
+          <option {{ 'selected' if val('werkstatus') == opt }}>{{ opt }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+  </div>
+
+  <div class="section-header">B &nbsp; Procesdata</div>
+  <div class="row g-3 mb-4">
+
+    <div class="col-md-4">
+      <label class="form-label">Datum verwijzing</label>
+      <input type="date" class="form-control" id="datum_verwijzing" name="datum_verwijzing" value="{{ val('datum_verwijzing') }}" onchange="checkDatums()">
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Datum eerste gesprek (intake)</label>
+      <input type="date" class="form-control" id="datum_intake" name="datum_intake" value="{{ val('datum_intake') }}" onchange="checkDatums()">
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Datum start activiteit</label>
+      <input type="date" class="form-control" id="datum_start_activiteit" name="datum_start_activiteit" value="{{ val('datum_start_activiteit') }}" onchange="checkDatums()">
+    </div>
+    <div class="col-12">
+      <div id="datum-errors" class="alert alert-warning py-2 small mb-0" style="display:none"></div>
+    </div>
+
+    <div class="col-md-6">
+      <label class="form-label">Uren face-to-face contact <small class="text-muted">(incl. administratietijd)</small></label>
+      <input type="number" min="0" step="0.1" class="form-control" name="contactmomenten_ff" value="{{ val('contactmomenten_ff') }}">
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Uren telefonisch contact <small class="text-muted">(incl. administratietijd)</small></label>
+      <input type="number" min="0" step="0.1" class="form-control" name="contactmomenten_tel" value="{{ val('contactmomenten_tel') }}">
+    </div>
+
+    {# Uitval #}
+    <div class="col-12">
+      <label class="form-label">Is de deelnemer voor het einde van het traject uitgevallen? <span class="text-danger">*</span></label>
+      <div class="d-flex gap-3">
+        <div class="form-check">
+          <input class="form-check-input" type="radio" name="uitval_ja_nee" id="uitval_nee" value="nee"
+                 {{ 'checked' if val('uitval_ja_nee') == 'nee' }} onclick="toggleUitval(false)" required>
+          <label class="form-check-label" for="uitval_nee">Nee</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="radio" name="uitval_ja_nee" id="uitval_ja" value="ja"
+                 {{ 'checked' if val('uitval_ja_nee') == 'ja' }} onclick="toggleUitval(true)">
+          <label class="form-check-label" for="uitval_ja">Ja</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6" id="uitval_reden_wrap" style="display:{{ 'block' if val('uitval_ja_nee') == 'ja' else 'none' }}">
+      <label class="form-label">Voornaamste reden van uitval</label>
+      <select class="form-select" name="uitval_reden">
+        <option value="">— Selecteer —</option>
+        {% for opt in ['Persoonlijke omstandigheden','Overlijden of ernstige ziekte','Geen match met aanbod','Financiële drempel','Wachttijd activiteit te lang','Drempel te hoog (bijv. sociale angst)','Taalbarrière of communicatieproblemen','Onbereikbaar geworden','Doorverwezen naar andere zorg','Anders'] %}
+          <option {{ 'selected' if val('uitval_reden') == opt }}>{{ opt }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    {# Doorverwezen #}
+    <div class="col-12">
+      <label class="form-label">Is de deelnemer doorverwezen naar een andere vorm van ondersteuning?</label>
+      <div class="d-flex gap-3">
+        <div class="form-check">
+          <input class="form-check-input" type="radio" name="doorverwezen_ja_nee" id="dv_nee" value="nee"
+                 {{ 'checked' if val('doorverwezen_ja_nee') == 'nee' }} onclick="toggleDv(false)">
+          <label class="form-check-label" for="dv_nee">Nee</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="radio" name="doorverwezen_ja_nee" id="dv_ja" value="ja"
+                 {{ 'checked' if val('doorverwezen_ja_nee') == 'ja' }} onclick="toggleDv(true)">
+          <label class="form-check-label" for="dv_ja">Ja</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6" id="doorverwezen_naar_wrap" style="display:{{ 'block' if val('doorverwezen_ja_nee') == 'ja' else 'none' }}">
+      <label class="form-label">Doorverwezen naar</label>
+      <select class="form-select" name="doorverwezen_naar">
+        <option value="">— Selecteer —</option>
+        {% for opt in ['GGZ','Maatschappelijk werk','Schuldhulpverlening','Huisarts of medische zorg','Fysiotherapeut of paramedicus','Andere sociaal werker','Anders'] %}
+          <option {{ 'selected' if val('doorverwezen_naar') == opt }}>{{ opt }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    {# Terugkoppeling #}
+    <div class="col-12">
+      <label class="form-label">Is er terugkoppeling gegeven aan de verwijzer?</label>
+      <div class="d-flex gap-3">
+        {% for opt, lbl in [('ja','Ja'),('nee','Nee'),('nvt','N.v.t.')] %}
+        <div class="form-check">
+          <input class="form-check-input" type="radio" name="terugkoppeling" id="tk_{{ opt }}" value="{{ opt }}"
+                 {{ 'checked' if val('terugkoppeling') == opt }}>
+          <label class="form-check-label" for="tk_{{ opt }}">{{ lbl }}</label>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+  </div>
+
+  <div class="d-flex gap-2">
+    <button type="submit" class="btn btn-primary">{{ 'Wijzigingen opslaan' if existing else 'Opslaan' }}</button>
+    <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary">Annuleren</a>
+  </div>
+
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleUitval(show) {
+  document.getElementById('uitval_reden_wrap').style.display = show ? '' : 'none';
+}
+function toggleDv(show) {
+  document.getElementById('doorverwezen_naar_wrap').style.display = show ? '' : 'none';
+}
+
+function checkDatums() {
+  const v = document.getElementById('datum_verwijzing').value;
+  const i = document.getElementById('datum_intake').value;
+  const s = document.getElementById('datum_start_activiteit').value;
+  const errEl = document.getElementById('datum-errors');
+  const msgs = [];
+
+  if (v && i && v > i)
+    msgs.push('Datum verwijzing moet vóór datum eerste gesprek (intake) liggen.');
+  if (i && s && i > s)
+    msgs.push('Datum eerste gesprek (intake) moet vóór datum start activiteit liggen.');
+  if (v && s && !i && v > s)
+    msgs.push('Datum verwijzing moet vóór datum start activiteit liggen.');
+
+  if (msgs.length) {
+    errEl.innerHTML = msgs.join('<br>');
+    errEl.style.display = '';
+  } else {
+    errEl.style.display = 'none';
+  }
+  return msgs.length === 0;
+}
+
+document.querySelector('form').addEventListener('submit', function(e) {
+  if (!checkDatums()) e.preventDefault();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}WoR Registratie{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap.min.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg mb-4">
+  <div class="container d-flex justify-content-between align-items-center">
+    <a class="navbar-brand" href="{{ url_for('main.index') }}">
+      <span class="accent">●</span> Welzijn op Recept
+      <small class="fw-normal ms-2 opacity-75" style="font-size:.78rem">Registratie</small>
+    </a>
+    {% if coach.naam %}
+    <div class="d-flex align-items-center gap-2">
+      <span class="text-white opacity-75 small">
+        {{ coach.naam }}
+        <span class="opacity-50 ms-1">· {{ coach.gemeente }}</span>
+        <span class="opacity-40 ms-1" style="font-family:monospace;font-size:.7rem">#{{ coach.coach_id }}</span>
+      </span>
+      <a href="{{ url_for('main.coach_setup') }}"
+         class="btn btn-sm"
+         style="background:rgba(255,255,255,.15); color:#fff; border:1px solid rgba(255,255,255,.3); font-size:.75rem">
+        Wijzigen
+      </a>
+    </div>
+    {% endif %}
+  </div>
+</nav>
+
+<div class="container pb-5">
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show rounded-3" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  {% block content %}{% endblock %}
+
+</div>
+
+<script src="{{ url_for('static', filename='bootstrap.bundle.min.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>
