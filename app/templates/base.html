@@ -20,6 +20,7 @@
     </a>
     {% if coach.naam %}
     <div class="d-flex align-items-center gap-2">
+      <a href="{{ url_for('main.dashboard') }}" class="btn btn-sm btn-navbar-ghost">Dashboard</a>
       <span class="text-white opacity-75 small">
         {{ coach.naam }}
         <span class="opacity-50 ms-1">· {{ coach.gemeente }}</span>
