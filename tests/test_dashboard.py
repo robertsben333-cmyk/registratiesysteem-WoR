@@ -226,3 +226,42 @@ def test_dashboard_status_filter_and_radar_filter(db, db_path):
     radar = get_dashboard_data('alles', radar_group='continuering', radar_value='ja_actief')
     assert radar['sw_n'] == 1
     assert radar['filters']['radar_scope_label'] == 'Continuering: Nog actief'
+
+
+def test_dashboard_kpi_naar_activiteit_and_contacturen_only_completed(db, db_path):
+    import sqlite3
+    conn = sqlite3.connect(db_path)
+
+    conn.execute("INSERT INTO clients (voornaam) VALUES ('Loopt')")
+    actief_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+    conn.execute("INSERT INTO vragenlijst_1 (client_id) VALUES (?)", (actief_id,))
+    conn.execute(
+        "INSERT INTO vragenlijst_2 (client_id, datum_start_activiteit, contactmomenten_ff, contactmomenten_tel, uitval_ja_nee) "
+        "VALUES (?, '2026-01-10', 10, 4, 'nee')",
+        (actief_id,)
+    )
+
+    conn.execute("INSERT INTO clients (voornaam) VALUES ('Klaar')")
+    afgerond_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+    conn.execute("INSERT INTO vragenlijst_1 (client_id) VALUES (?)", (afgerond_id,))
+    conn.execute(
+        "INSERT INTO vragenlijst_2 (client_id, datum_start_activiteit, contactmomenten_ff, contactmomenten_tel, uitval_ja_nee) "
+        "VALUES (?, '2026-01-08', 6, 2, 'nee')",
+        (afgerond_id,)
+    )
+    conn.execute("INSERT INTO vragenlijst_3 (client_id, continuering) VALUES (?, 'ja_actief')", (afgerond_id,))
+
+    conn.commit()
+    conn.close()
+
+    data = get_dashboard_data('alles')
+    assert data['kpis']['naar_activiteit'] == 1
+    assert data['contactmomenten']['afgerond_n'] == 1
+    assert data['contactmomenten']['gem_ff'] == 6.0
+    assert data['contactmomenten']['gem_tel'] == 2.0
+
+
+def test_dashboard_radar_filter_groups_limited(db):
+    data = get_dashboard_data('alles')
+    radar_groups = [item['value'] for item in data['filters']['radar_group_options']]
+    assert radar_groups == ['alle', 'geslacht', 'hoofdreden', 'continuering']

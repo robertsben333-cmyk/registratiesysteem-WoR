@@ -23,6 +23,7 @@ exe = EXE(
     a.datas,
     [],
     name='WoR Registratie',
+    icon='assets/wor-logo.ico',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

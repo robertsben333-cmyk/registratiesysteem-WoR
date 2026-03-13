@@ -16,10 +16,9 @@ CONTINUERING_LABELS = {
 
 RADAR_FILTER_GROUPS = {
     'alle': {'label': 'Alle deelnemers', 'source': None},
-    'verwijzer': {'label': 'Verwijzer', 'source': 'vl1', 'field': 'verwijzer'},
+    'geslacht': {'label': 'Geslacht', 'source': 'vl1', 'field': 'geslacht'},
     'hoofdreden': {'label': 'Hoofdreden aanmelding', 'source': 'vl2', 'field': 'hoofdreden'},
     'continuering': {'label': 'Continuering', 'source': 'vl3', 'field': 'continuering'},
-    'behoefte': {'label': 'Ondersteuningsbehoefte', 'source': 'vl3', 'field': 'behoefte_ondersteuning'},
 }
 
 STATUS_FILTERS = {
@@ -296,7 +295,14 @@ def get_all_for_export():
 def _empty_dashboard_data():
     dim_names = list(SW_QUESTIONS.keys())
     return {
-        'kpis': {'totaal': 0, 'actief': 0, 'afgerond': 0, 'uitgevallen': 0, 'gem_tevredenheid': None},
+        'kpis': {
+            'totaal': 0,
+            'actief': 0,
+            'afgerond': 0,
+            'uitgevallen': 0,
+            'naar_activiteit': 0,
+            'gem_tevredenheid': None,
+        },
         'sw_vl1': [None] * 6,
         'sw_vl3': [None] * 6,
         'sw_delta': [None] * 6,
@@ -307,7 +313,7 @@ def _empty_dashboard_data():
         'signalen': [],
         'demografie': {'geslacht': [], 'leeftijd': []},
         'uitstroom': {'bestemmingen': [], 'doorverwezen_ja': 0, 'doorverwezen_nee': 0},
-        'contactmomenten': {'gem_ff': None, 'gem_tel': None},
+        'contactmomenten': {'gem_ff': None, 'gem_tel': None, 'afgerond_n': 0},
         'doorstroom': {
             'gem_verwijzing_intake': None,
             'gem_intake_start': None,
@@ -326,11 +332,17 @@ def _empty_dashboard_data():
         },
         'filters': {
             'status': 'alle',
-            'status_options': [],
+            'status_options': [
+                {'value': key, 'label': label, 'count': 0}
+                for key, label in STATUS_FILTERS.items()
+            ],
             'radar_group': 'alle',
-            'radar_group_options': [],
+            'radar_group_options': [
+                {'value': key, 'label': config['label']}
+                for key, config in RADAR_FILTER_GROUPS.items()
+            ],
             'radar_value': 'alle',
-            'radar_value_options': [],
+            'radar_value_options': [{'value': 'alle', 'label': 'Alle waarden'}],
             'radar_scope_label': 'Alle deelnemers met intake en opvolging',
         },
     }
@@ -431,6 +443,12 @@ def get_dashboard_data(periode='alles', status='alle', radar_group='alle', radar
         'actief': actief,
         'afgerond': afgerond,
         'uitgevallen': uitgevallen,
+        'naar_activiteit': sum(
+            1 for cid, row in vl2_rows.items()
+            if cid not in uitgevallen_ids
+            and cid not in vl3_ids
+            and _parse_iso_date(row['datum_start_activiteit']) is not None
+        ),
         'gem_tevredenheid': gem_tv,
     }
 
@@ -582,11 +600,13 @@ def get_dashboard_data(periode='alles', status='alle', radar_group='alle', radar
     }
 
     # ── 9. Contactmomenten ───────────────────────────────────────────
-    ff_vals = [r['contactmomenten_ff'] for r in vl2_list if r['contactmomenten_ff'] is not None]
-    tel_vals = [r['contactmomenten_tel'] for r in vl2_list if r['contactmomenten_tel'] is not None]
+    afgeronde_vl2_rows = [vl2_rows[cid] for cid in client_ids if cid in vl2_rows and cid in vl3_ids and cid not in uitgevallen_ids]
+    ff_vals = [r['contactmomenten_ff'] for r in afgeronde_vl2_rows if r['contactmomenten_ff'] is not None]
+    tel_vals = [r['contactmomenten_tel'] for r in afgeronde_vl2_rows if r['contactmomenten_tel'] is not None]
     contactmomenten = {
         'gem_ff': round(sum(ff_vals) / len(ff_vals), 1) if ff_vals else None,
         'gem_tel': round(sum(tel_vals) / len(tel_vals), 1) if tel_vals else None,
+        'afgerond_n': len(afgeronde_vl2_rows),
     }
 
     # ── 10. Doorstroom ───────────────────────────────────────────────

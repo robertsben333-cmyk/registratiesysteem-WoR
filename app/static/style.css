@@ -377,6 +377,11 @@ body {
   backdrop-filter: blur(10px);
 }
 
+.dashboard-back-btn {
+  font-weight: 700;
+  padding-inline: 1rem;
+}
+
 .toolbar-group {
   display: flex;
   align-items: center;
@@ -441,12 +446,7 @@ body {
 .kpi-card__value {
   font-size: 2.2rem;
   font-weight: 700;
-  margin: .45rem 0 .15rem;
-}
-
-.kpi-card__meta {
-  color: var(--wor-muted);
-  font-size: .82rem;
+  margin-top: .45rem;
 }
 
 .dashboard-tabs {
@@ -602,15 +602,6 @@ body {
   padding: .85rem 1rem;
   border-radius: 16px;
   background: linear-gradient(135deg, rgba(30,111,142,.08), rgba(232,147,58,.10));
-}
-
-.impact-headline__eyebrow {
-  display: block;
-  color: var(--wor-muted);
-  text-transform: uppercase;
-  font-size: .72rem;
-  letter-spacing: .08em;
-  margin-bottom: .2rem;
 }
 
 .radar-filter-form {
