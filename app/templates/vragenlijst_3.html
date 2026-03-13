@@ -30,8 +30,7 @@
       </select>
     </div>
 
-    <div class="col-md-6" id="reden_wrap"
-         style="display:{{ 'block' if val('continuering') in ['nee_gestopt','nee_nooit'] else 'none' }}">
+    <div class="col-md-6{{ '' if val('continuering') in ['nee_gestopt','nee_nooit'] else ' d-none' }}" id="reden_wrap">
       <label class="form-label">Voornaamste reden van stoppen</label>
       <select class="form-select" name="reden_stoppen">
         <option value="">— Selecteer —</option>
@@ -65,7 +64,7 @@
                name="tevredenheidscijfer" id="tev_slider"
                value="{{ val('tevredenheidscijfer', 5) }}"
                oninput="document.getElementById('tev_lbl').textContent = this.value">
-        <span class="badge bg-secondary" id="tev_lbl" style="min-width:28px">
+        <span class="badge bg-secondary badge-score" id="tev_lbl">
           {{ val('tevredenheidscijfer', 5) }}
         </span>
       </div>
@@ -101,8 +100,8 @@
 {% block scripts %}
 <script>
 function toggleReden(val) {
-  document.getElementById('reden_wrap').style.display =
-    (val === 'nee_gestopt' || val === 'nee_nooit') ? '' : 'none';
+  document.getElementById('reden_wrap').classList.toggle('d-none',
+    val !== 'nee_gestopt' && val !== 'nee_nooit');
 }
 
 function updateScore(el) {

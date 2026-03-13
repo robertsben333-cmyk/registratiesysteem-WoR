@@ -189,3 +189,71 @@ body {
 /* ── Flash alerts ────────────────────────────────────────────────────────── */
 .alert-success { background: #E6F4EE; border-color: #aedbbb; color: #1a5c37; }
 .alert-danger  { background: #FCEAEA; border-color: #f0bdbd; color: #7a2222; }
+
+/* ── Navbar sub-elements ─────────────────────────────────────────────────── */
+.navbar-brand small { font-size: .78rem; }
+.coach-id { font-family: monospace; font-size: .7rem; }
+.btn-navbar-ghost {
+  background: rgba(255,255,255,.15);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,.3);
+  font-size: .75rem;
+}
+.btn-navbar-ghost:hover,
+.btn-navbar-ghost:focus { background: rgba(255,255,255,.25); color: #fff; }
+
+/* ── Page-header ghost button ────────────────────────────────────────────── */
+.btn-header-ghost {
+  background: rgba(255,255,255,.2);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,.4);
+}
+.btn-header-ghost:hover,
+.btn-header-ghost:focus { background: rgba(255,255,255,.3); color: #fff; }
+
+/* ── Client table columns ────────────────────────────────────────────────── */
+.th-naam { min-width: 120px; }
+.th-vl   { width: 160px; }
+.btn-action { font-size: 0.75rem; }
+
+/* ── VL2 form ────────────────────────────────────────────────────────────── */
+#datum-errors { display: none; }
+
+/* ── VL2 view label column ───────────────────────────────────────────────── */
+.vl2-label-col { width: 45%; }
+
+/* ── Coach setup ─────────────────────────────────────────────────────────── */
+.coach-id-box     { background: #f8f9fa; border: 1px solid #dee2e6; }
+.coach-id-label   { font-size: .75rem; }
+.coach-id-display { font-family: monospace; font-size: 1.1rem; letter-spacing: .1em; }
+
+/* ── Spider / view labels ────────────────────────────────────────────────── */
+.spider-sub-label  { font-size: .8rem; }
+.spider-sub-footer { font-size: .75rem; }
+.dim-compare       { font-size: .78rem; min-width: 56px; text-align: right; }
+
+/* ── Satisfaction score ──────────────────────────────────────────────────── */
+.score-value { font-size: 1.1rem; color: var(--wor-primary); }
+.score-unit  { font-size: .8rem; }
+.badge-score { min-width: 28px; }
+
+/* ── Spinnenweb form ─────────────────────────────────────────────────────── */
+.sw-question-text { min-width: 0; }
+.sw-range-wrap    { width: 220px; flex-shrink: 0; }
+.sw-axis-label    { font-size: .7rem; white-space: nowrap; }
+.sw-badge         { font-size: .8rem; }
+.sw-score-col     { width: 80px; }
+.sw-answers-cell  { font-size: .8rem; }
+
+/* ── Spider chart legend markers ─────────────────────────────────────────── */
+.legend-line {
+  display: inline-block;
+  width: 12px; height: 3px;
+  vertical-align: middle;
+  border-radius: 2px;
+}
+.legend-line-primary { background: #1E6F8E; }
+.legend-line-accent  { background: #E8933A; }
+
+/* ── Dimension dot (color set inline, shape here) ───────────────────────── */
+.dim-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }

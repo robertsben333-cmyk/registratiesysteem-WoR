@@ -16,13 +16,13 @@
 <div class="row g-4 mb-4">
   <div class="col-md-6">
     <div class="spider-wrap">
-      <p class="text-muted small mb-2" style="font-size:.8rem">
+      <p class="text-muted small mb-2 spider-sub-label">
         Spinnenweb hermeting
         {% if scores1 %}
           <span class="ms-3">
-            <span style="display:inline-block;width:12px;height:3px;background:#1E6F8E;vertical-align:middle;border-radius:2px"></span> Nulmeting (VL1)
+            <span class="legend-line legend-line-primary"></span> Nulmeting (VL1)
             &nbsp;
-            <span style="display:inline-block;width:12px;height:3px;background:#E8933A;vertical-align:middle;border-radius:2px"></span> Hermeting (VL3)
+            <span class="legend-line legend-line-accent"></span> Hermeting (VL3)
           </span>
         {% endif %}
       </p>
@@ -44,10 +44,10 @@
       {% set sc3 = scores.get(dim) %}
       {% set sc1 = scores1.get(dim) if scores1 else none %}
       <div class="dim-pill">
-        <span class="dim-dot" style="background:{{ dc }}; width:10px; height:10px; border-radius:50%; flex-shrink:0"></span>
+        <span class="dim-dot" style="background:{{ dc }}"></span>
         <span class="dim-name">{{ dim }}</span>
         {% if sc1 is not none %}
-          <span class="text-muted" style="font-size:.78rem; min-width:56px; text-align:right">
+          <span class="text-muted dim-compare">
             {{ sc1 }} → <strong style="color:{{ dc }}">{{ sc3 if sc3 is not none else '—' }}</strong>
           </span>
         {% else %}
@@ -56,7 +56,7 @@
       </div>
     {% endfor %}
     {% if scores1 %}
-      <p class="text-muted mt-1 mb-0" style="font-size:.75rem">Nulmeting → Hermeting per dimensie</p>
+      <p class="text-muted mt-1 mb-0 spider-sub-footer">Nulmeting → Hermeting per dimensie</p>
     {% endif %}
   </div>
 </div>
@@ -85,9 +85,9 @@
       </div>
       <div class="col-sm-6 col-md-4">
         <div class="text-muted small">Tevredenheidscijfer</div>
-        <div class="fw-semibold" style="font-size:1.1rem; color:var(--wor-primary)">
+        <div class="fw-semibold score-value">
           {{ row.tevredenheidscijfer if row.tevredenheidscijfer is not none else '—' }}
-          <span class="text-muted fw-normal" style="font-size:.8rem">/ 10</span>
+          <span class="text-muted fw-normal score-unit">/ 10</span>
         </div>
       </div>
       <div class="col-sm-6 col-md-4">

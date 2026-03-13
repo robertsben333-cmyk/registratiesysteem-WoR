@@ -97,7 +97,7 @@
       <input type="date" class="form-control" id="datum_start_activiteit" name="datum_start_activiteit" value="{{ val('datum_start_activiteit') }}" onchange="checkDatums()">
     </div>
     <div class="col-12">
-      <div id="datum-errors" class="alert alert-warning py-2 small mb-0" style="display:none"></div>
+      <div id="datum-errors" class="alert alert-warning py-2 small mb-0"></div>
     </div>
 
     <div class="col-md-6">
@@ -126,7 +126,7 @@
       </div>
     </div>
 
-    <div class="col-md-6" id="uitval_reden_wrap" style="display:{{ 'block' if val('uitval_ja_nee') == 'ja' else 'none' }}">
+    <div class="col-md-6{{ '' if val('uitval_ja_nee') == 'ja' else ' d-none' }}" id="uitval_reden_wrap">
       <label class="form-label">Voornaamste reden van uitval</label>
       <select class="form-select" name="uitval_reden">
         <option value="">— Selecteer —</option>
@@ -153,7 +153,7 @@
       </div>
     </div>
 
-    <div class="col-md-6" id="doorverwezen_naar_wrap" style="display:{{ 'block' if val('doorverwezen_ja_nee') == 'ja' else 'none' }}">
+    <div class="col-md-6{{ '' if val('doorverwezen_ja_nee') == 'ja' else ' d-none' }}" id="doorverwezen_naar_wrap">
       <label class="form-label">Doorverwezen naar</label>
       <select class="form-select" name="doorverwezen_naar">
         <option value="">— Selecteer —</option>
@@ -190,25 +190,38 @@
 {% block scripts %}
 <script>
 function toggleUitval(show) {
-  document.getElementById('uitval_reden_wrap').style.display = show ? '' : 'none';
+  document.getElementById('uitval_reden_wrap').classList.toggle('d-none', !show);
 }
 function toggleDv(show) {
-  document.getElementById('doorverwezen_naar_wrap').style.display = show ? '' : 'none';
+  document.getElementById('doorverwezen_naar_wrap').classList.toggle('d-none', !show);
 }
 
 function checkDatums() {
-  const v = document.getElementById('datum_verwijzing').value;
-  const i = document.getElementById('datum_intake').value;
-  const s = document.getElementById('datum_start_activiteit').value;
+  const fV = document.getElementById('datum_verwijzing');
+  const fI = document.getElementById('datum_intake');
+  const fS = document.getElementById('datum_start_activiteit');
+  const v = fV.value, i = fI.value, s = fS.value;
   const errEl = document.getElementById('datum-errors');
   const msgs = [];
+  const invalid = new Set();
 
-  if (v && i && v > i)
+  if (v && i && v > i) {
     msgs.push('Datum verwijzing moet vóór datum eerste gesprek (intake) liggen.');
-  if (i && s && i > s)
+    invalid.add(fV); invalid.add(fI);
+  }
+  if (i && s && i > s) {
     msgs.push('Datum eerste gesprek (intake) moet vóór datum start activiteit liggen.');
-  if (v && s && !i && v > s)
+    invalid.add(fI); invalid.add(fS);
+  }
+  if (v && s && !i && v > s) {
     msgs.push('Datum verwijzing moet vóór datum start activiteit liggen.');
+    invalid.add(fV); invalid.add(fS);
+  }
+
+  [fV, fI, fS].forEach(f => {
+    f.classList.toggle('is-invalid', invalid.has(f));
+    f.classList.toggle('is-valid', !invalid.has(f) && f.value !== '');
+  });
 
   if (msgs.length) {
     errEl.innerHTML = msgs.join('<br>');

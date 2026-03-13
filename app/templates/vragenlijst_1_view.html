@@ -16,7 +16,7 @@
 <div class="row g-4 mb-4">
   <div class="col-md-6">
     <div class="spider-wrap">
-      <p class="text-muted small mb-3" style="font-size:.8rem">Spinnenweb nulmeting</p>
+      <p class="text-muted small mb-3 spider-sub-label">Spinnenweb nulmeting</p>
       <canvas id="radarChart" width="380" height="340"></canvas>
     </div>
   </div>
@@ -34,7 +34,7 @@
       {% set dc = dim_colors.get(dim, '#1E6F8E') %}
       {% set sc = scores.get(dim) %}
       <div class="dim-pill">
-        <span class="dim-dot" style="background:{{ dc }}; width:10px; height:10px; border-radius:50%; flex-shrink:0"></span>
+        <span class="dim-dot" style="background:{{ dc }}"></span>
         <span class="dim-name">{{ dim }}</span>
         <span class="dim-score" style="color:{{ dc }}">{{ sc if sc is not none else '—' }}</span>
       </div>

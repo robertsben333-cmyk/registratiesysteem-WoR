@@ -10,7 +10,7 @@
 } %}
 
 {% macro spinnenweb_form(sw_questions, existing) %}
-<p class="text-muted small mb-3" style="font-size:.84rem">
+<p class="text-muted small mb-3 spider-sub-label">
   Schuif per uitspraak de slider naar het getal dat het beste klopt: <strong>0</strong> = klopt niet &nbsp;·&nbsp; <strong>10</strong> = klopt volledig.
 </p>
 
@@ -21,22 +21,22 @@
   <div class="card-header d-flex justify-content-between align-items-center py-2"
        style="border-left: 4px solid {{ color }}; background: {{ color }}11;">
     <span style="color:{{ color }}">{{ dim }}</span>
-    <span class="badge rounded-pill" style="background:{{ color }}; font-size:.8rem" id="avg_{{ gid }}">gem. —</span>
+    <span class="badge rounded-pill sw-badge" style="background:{{ color }}" id="avg_{{ gid }}">gem. —</span>
   </div>
   <div class="card-body py-2 px-3">
     {% for (n, txt) in questions %}
     <div class="sw-row d-flex align-items-center gap-2">
       <span class="sw-num" style="background:{{ color }}">{{ n }}</span>
-      <span class="flex-grow-1 small" style="min-width:0">{{ txt }}</span>
-      <div class="d-flex align-items-center gap-2 ms-2" style="width:220px; flex-shrink:0">
-        <span class="text-muted" style="font-size:.7rem; white-space:nowrap">0</span>
+      <span class="flex-grow-1 small sw-question-text">{{ txt }}</span>
+      <div class="d-flex align-items-center gap-2 ms-2 sw-range-wrap">
+        <span class="text-muted sw-axis-label">0</span>
         <input type="range" class="form-range sw-slider flex-grow-1"
                min="0" max="10" step="1"
                name="sw_q{{ n }}" id="sw_q{{ n }}"
                value="{{ existing['sw_q' ~ n] if existing and existing['sw_q' ~ n] is not none else 5 }}"
                data-gid="{{ gid }}"
                oninput="swUpdate(this)">
-        <span class="text-muted" style="font-size:.7rem">10</span>
+        <span class="text-muted sw-axis-label">10</span>
         <span class="sw-score" id="lbl_sw_q{{ n }}" style="background:{{ color }}">
           {{ existing['sw_q' ~ n] if existing and existing['sw_q' ~ n] is not none else 5 }}
         </span>
@@ -82,7 +82,7 @@ document.addEventListener('DOMContentLoaded', function() {
   <div class="card-body p-0">
     <table class="table table-sm mb-0">
       <thead class="table-light">
-        <tr><th>Dimensie</th><th style="width:80px">Score</th><th class="text-muted fw-normal">Individuele antwoorden</th></tr>
+        <tr><th>Dimensie</th><th class="sw-score-col">Score</th><th class="text-muted fw-normal">Individuele antwoorden</th></tr>
       </thead>
       <tbody>
       {% for dim, questions in sw_questions.items() %}
@@ -104,7 +104,7 @@ document.addEventListener('DOMContentLoaded', function() {
               <span class="badge rounded-pill" style="background:{{ dc }}">{{ avg }}</span>
             {% else %}<span class="text-muted">—</span>{% endif %}
           </td>
-          <td class="text-muted" style="font-size:.8rem">
+          <td class="text-muted sw-answers-cell">
             {% for (n, txt) in questions %}
               <span title="{{ txt }}">{{ row['sw_q' ~ n] if row['sw_q' ~ n] is not none else '?' }}</span>{% if not loop.last %}, {% endif %}
             {% endfor %}

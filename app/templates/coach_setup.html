@@ -52,9 +52,9 @@
           </div>
 
           {% if existing.coach_id %}
-          <div class="mb-3 p-2 rounded" style="background:#f8f9fa; border:1px solid #dee2e6">
-            <small class="text-muted d-block" style="font-size:.75rem">Uw coach-ID (eenmalig aangemaakt)</small>
-            <span class="fw-semibold" style="font-family:monospace;font-size:1.1rem;letter-spacing:.1em">{{ existing.coach_id }}</span>
+          <div class="mb-3 p-2 rounded coach-id-box">
+            <small class="text-muted d-block coach-id-label">Uw coach-ID (eenmalig aangemaakt)</small>
+            <span class="fw-semibold coach-id-display">{{ existing.coach_id }}</span>
           </div>
           {% endif %}
 

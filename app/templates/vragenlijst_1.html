@@ -30,8 +30,7 @@
       </select>
     </div>
 
-    <div class="col-md-6" id="huisarts_wrap"
-         style="display:{{ 'block' if val('verwijzer') == 'Huisarts' else 'none' }}">
+    <div class="col-md-6{{ '' if val('verwijzer') == 'Huisarts' else ' d-none' }}" id="huisarts_wrap">
       <label class="form-label">Welke huisartsenpraktijk?</label>
       <input type="text" class="form-control" name="huisartsenpraktijk"
              value="{{ val('huisartsenpraktijk') }}" placeholder="Naam praktijk">
@@ -115,7 +114,7 @@
 {% block scripts %}
 <script>
 function toggleHuisarts(val) {
-  document.getElementById('huisarts_wrap').style.display = val === 'Huisarts' ? '' : 'none';
+  document.getElementById('huisarts_wrap').classList.toggle('d-none', val !== 'Huisarts');
 }
 
 function updateScore(el) {

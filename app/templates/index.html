@@ -10,7 +10,7 @@
   </div>
   <div class="d-flex gap-2">
     <a href="{{ url_for('main.client_add') }}" class="btn btn-accent btn-sm">+ Nieuwe cliënt</a>
-    <a href="{{ url_for('main.export_excel') }}" class="btn btn-sm" style="background:#fff3; color:#fff; border:1px solid rgba(255,255,255,.4)">Exporteer Excel</a>
+    <a href="{{ url_for('main.export_excel') }}" class="btn btn-sm btn-header-ghost">Exporteer Excel</a>
   </div>
 </div>
 
@@ -20,15 +20,15 @@
     <table class="table table-hover mb-0 align-middle">
       <thead class="table-light">
         <tr>
-          <th style="min-width:120px">Naam</th>
+          <th class="th-naam">Naam</th>
           <th>Toegevoegd op</th>
-          <th class="text-center" style="width:160px">
+          <th class="text-center th-vl">
             Vragenlijst 1<br><small class="text-muted fw-normal">Intake</small>
           </th>
-          <th class="text-center" style="width:160px">
+          <th class="text-center th-vl">
             Vragenlijst 2<br><small class="text-muted fw-normal">Uitstroom</small>
           </th>
-          <th class="text-center" style="width:160px">
+          <th class="text-center th-vl">
             Vragenlijst 3<br><small class="text-muted fw-normal">Opvolging (3 mnd)</small>
           </th>
           <th></th>
@@ -47,15 +47,15 @@
                  class="vl-badge done">&#10003; Ingevuld</a>
               <div class="d-flex gap-1 mt-1">
                 <a href="{{ url_for('main.vragenlijst_1_view', client_id=client.id) }}"
-                   class="btn btn-outline-secondary btn-sm flex-grow-1" style="font-size:0.75rem">Bekijken</a>
+                   class="btn btn-outline-secondary btn-sm flex-grow-1 btn-action">Bekijken</a>
                 <a href="{{ url_for('main.vragenlijst_1', client_id=client.id) }}"
-                   class="btn btn-outline-secondary btn-sm flex-grow-1" style="font-size:0.75rem">Bewerken</a>
+                   class="btn btn-outline-secondary btn-sm flex-grow-1 btn-action">Bewerken</a>
               </div>
             {% else %}
               <a href="{{ url_for('main.vragenlijst_1', client_id=client.id) }}"
                  class="vl-badge todo">Nog te doen</a>
               <a href="{{ url_for('main.vragenlijst_1', client_id=client.id) }}"
-                 class="btn btn-outline-secondary btn-sm w-100 mt-1" style="font-size:0.75rem">Invullen</a>
+                 class="btn btn-outline-secondary btn-sm w-100 mt-1 btn-action">Invullen</a>
             {% endif %}
           </td>
 
@@ -66,15 +66,15 @@
                  class="vl-badge done">&#10003; Ingevuld</a>
               <div class="d-flex gap-1 mt-1">
                 <a href="{{ url_for('main.vragenlijst_2_view', client_id=client.id) }}"
-                   class="btn btn-outline-secondary btn-sm flex-grow-1" style="font-size:0.75rem">Bekijken</a>
+                   class="btn btn-outline-secondary btn-sm flex-grow-1 btn-action">Bekijken</a>
                 <a href="{{ url_for('main.vragenlijst_2', client_id=client.id) }}"
-                   class="btn btn-outline-secondary btn-sm flex-grow-1" style="font-size:0.75rem">Bewerken</a>
+                   class="btn btn-outline-secondary btn-sm flex-grow-1 btn-action">Bewerken</a>
               </div>
             {% else %}
               <a href="{{ url_for('main.vragenlijst_2', client_id=client.id) }}"
                  class="vl-badge todo">Nog te doen</a>
               <a href="{{ url_for('main.vragenlijst_2', client_id=client.id) }}"
-                 class="btn btn-outline-secondary btn-sm w-100 mt-1" style="font-size:0.75rem">Invullen</a>
+                 class="btn btn-outline-secondary btn-sm w-100 mt-1 btn-action">Invullen</a>
             {% endif %}
           </td>
 
@@ -85,15 +85,15 @@
                  class="vl-badge done">&#10003; Ingevuld</a>
               <div class="d-flex gap-1 mt-1">
                 <a href="{{ url_for('main.vragenlijst_3_view', client_id=client.id) }}"
-                   class="btn btn-outline-secondary btn-sm flex-grow-1" style="font-size:0.75rem">Bekijken</a>
+                   class="btn btn-outline-secondary btn-sm flex-grow-1 btn-action">Bekijken</a>
                 <a href="{{ url_for('main.vragenlijst_3', client_id=client.id) }}"
-                   class="btn btn-outline-secondary btn-sm flex-grow-1" style="font-size:0.75rem">Bewerken</a>
+                   class="btn btn-outline-secondary btn-sm flex-grow-1 btn-action">Bewerken</a>
               </div>
             {% else %}
               <a href="{{ url_for('main.vragenlijst_3', client_id=client.id) }}"
                  class="vl-badge todo">Nog te doen</a>
               <a href="{{ url_for('main.vragenlijst_3', client_id=client.id) }}"
-                 class="btn btn-outline-secondary btn-sm w-100 mt-1" style="font-size:0.75rem">Invullen</a>
+                 class="btn btn-outline-secondary btn-sm w-100 mt-1 btn-action">Invullen</a>
             {% endif %}
           </td>
 
