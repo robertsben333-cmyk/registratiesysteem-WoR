@@ -356,8 +356,8 @@ def get_dashboard_data(periode='alles'):
         avg1 = round(sum(vl1_vals) / len(vl1_vals), 2) if vl1_vals else None
         avg3 = round(sum(vl3_vals) / len(vl3_vals), 2) if vl3_vals else None
         delta = round(avg3 - avg1, 2) if (avg1 is not None and avg3 is not None) else None
-        sw_vl1.append(avg1 or 0)
-        sw_vl3.append(avg3 or 0)
+        sw_vl1.append(avg1)
+        sw_vl3.append(avg3)
         sw_delta.append(delta)
 
     # ── 5. Verwijzers ────────────────────────────────────────────────
@@ -385,7 +385,7 @@ def get_dashboard_data(periode='alles'):
         else:
             link = f'/client/{cid}/vragenlijst/1/view'
 
-        if cid not in vl2_rows:
+        if cid not in vl2_rows and c['aangemaakt_op']:
             aangemaakt = date.fromisoformat(c['aangemaakt_op'][:10])
             if aangemaakt <= drempel_datum:
                 maanden = (today.year - aangemaakt.year) * 12 + today.month - aangemaakt.month
