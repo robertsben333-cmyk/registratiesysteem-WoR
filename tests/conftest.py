@@ -87,7 +87,6 @@ CREATE TABLE IF NOT EXISTS vragenlijst_3 (
 def db_path(tmp_path):
     path = str(tmp_path / 'test.db')
     conn = sqlite3.connect(path)
-    conn.row_factory = sqlite3.Row
     conn.executescript(SCHEMA)
     conn.commit()
     conn.close()
