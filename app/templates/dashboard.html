@@ -63,7 +63,7 @@
               <th class="text-end">Δ</th>
             </tr></thead>
             <tbody>
-            {% for i in range(6) %}
+            {% for i in range(sw_labels | length) %}
               {% set delta = sw_delta[i] %}
               {% if delta is not none %}
                 {% if delta > 0.2 %}
@@ -74,7 +74,7 @@
                   {% set prefix = '' %}
                 {% else %}
                   {% set cls = 'text-muted' %}
-                  {% set prefix = '+' if delta >= 0 else '' %}
+                  {% set prefix = '' %}
                 {% endif %}
               {% else %}
                 {% set cls = '' %}
