@@ -236,3 +236,230 @@ def get_all_for_export():
 
     conn.close()
     return rows, sw_vl1, sw_vl3
+
+
+# ── Dashboard aggregation ─────────────────────────────────────────────────────
+
+def _empty_dashboard_data():
+    dim_names = list(SW_QUESTIONS.keys())
+    return {
+        'kpis': {'totaal': 0, 'actief': 0, 'afgerond': 0, 'uitgevallen': 0, 'gem_tevredenheid': None},
+        'sw_vl1': [None] * 6,
+        'sw_vl3': [None] * 6,
+        'sw_delta': [None] * 6,
+        'sw_n': 0,
+        'sw_labels': dim_names,
+        'verwijzers': [],
+        'huisartsen': [],
+        'signalen': [],
+        'demografie': {'geslacht': [], 'leeftijd': []},
+        'uitstroom': {'bestemmingen': [], 'doorverwezen_ja': 0, 'doorverwezen_nee': 0},
+        'contactmomenten': {'gem_ff': None, 'gem_tel': None},
+    }
+
+
+def get_dashboard_data(periode='alles'):
+    """Aggregate all dashboard data for the given period.
+
+    Returns a dict matching the template context contract in the design spec.
+    """
+    from collections import Counter
+    from datetime import timedelta
+
+    start, end = get_periode_range(periode)
+    conn = get_db()
+
+    # ── 1. Filtered clients ──────────────────────────────────────────
+    if start and end:
+        clients = conn.execute(
+            "SELECT * FROM clients WHERE date(aangemaakt_op) >= ? AND date(aangemaakt_op) <= ?",
+            (start.isoformat(), end.isoformat())
+        ).fetchall()
+    else:
+        clients = conn.execute("SELECT * FROM clients").fetchall()
+
+    client_ids = [c['id'] for c in clients]
+    if not client_ids:
+        conn.close()
+        return _empty_dashboard_data()
+
+    ph = ','.join('?' * len(client_ids))
+
+    # ── 2. VL existence + data lookup ───────────────────────────────
+    vl1_ids = {r['client_id'] for r in conn.execute(
+        f"SELECT client_id FROM vragenlijst_1 WHERE client_id IN ({ph})", client_ids
+    ).fetchall()}
+
+    vl2_rows = {r['client_id']: r for r in conn.execute(
+        f"SELECT * FROM vragenlijst_2 WHERE client_id IN ({ph})", client_ids
+    ).fetchall()}
+
+    vl3_ids = {r['client_id'] for r in conn.execute(
+        f"SELECT client_id FROM vragenlijst_3 WHERE client_id IN ({ph})", client_ids
+    ).fetchall()}
+
+    # ── 3. KPIs ─────────────────────────────────────────────────────
+    uitgevallen_ids = {cid for cid, r in vl2_rows.items() if r['uitval_ja_nee'] == 'ja'}
+    totaal = len(client_ids)
+    uitgevallen = len(uitgevallen_ids)
+    afgerond = sum(
+        1 for cid in client_ids
+        if cid not in uitgevallen_ids
+        and cid in vl1_ids
+        and cid in vl2_rows
+        and cid in vl3_ids
+    )
+    actief = totaal - uitgevallen - afgerond
+
+    tv_vals = [
+        r['tevredenheidscijfer'] for r in conn.execute(
+            f"SELECT tevredenheidscijfer FROM vragenlijst_3 "
+            f"WHERE client_id IN ({ph}) AND tevredenheidscijfer IS NOT NULL",
+            client_ids
+        ).fetchall()
+    ]
+    gem_tv = round(sum(tv_vals) / len(tv_vals), 1) if tv_vals else None
+
+    kpis = {
+        'totaal': totaal,
+        'actief': actief,
+        'afgerond': afgerond,
+        'uitgevallen': uitgevallen,
+        'gem_tevredenheid': gem_tv,
+    }
+
+    # ── 4. Spinnenweb ────────────────────────────────────────────────
+    sw_cols_str = ', '.join(SW_COLS)
+    vl1_sw = {r['client_id']: r for r in conn.execute(
+        f"SELECT client_id, {sw_cols_str} FROM vragenlijst_1 WHERE client_id IN ({ph})", client_ids
+    ).fetchall()}
+    vl3_sw = {r['client_id']: r for r in conn.execute(
+        f"SELECT client_id, {sw_cols_str} FROM vragenlijst_3 WHERE client_id IN ({ph})", client_ids
+    ).fetchall()}
+
+    both_ids = set(vl1_sw.keys()) & set(vl3_sw.keys())
+    sw_n = len(both_ids)
+    dim_names = list(SW_QUESTIONS.keys())
+    sw_vl1, sw_vl3, sw_delta = [], [], []
+
+    for dim, questions in SW_QUESTIONS.items():
+        q_nums = [n for n, _ in questions]
+        vl1_vals, vl3_vals = [], []
+        for cid in both_ids:
+            r1, r3 = vl1_sw[cid], vl3_sw[cid]
+            v1 = [r1[f'sw_q{n}'] for n in q_nums if r1[f'sw_q{n}'] is not None]
+            v3 = [r3[f'sw_q{n}'] for n in q_nums if r3[f'sw_q{n}'] is not None]
+            if v1:
+                vl1_vals.append(sum(v1) / len(v1))
+            if v3:
+                vl3_vals.append(sum(v3) / len(v3))
+        avg1 = round(sum(vl1_vals) / len(vl1_vals), 2) if vl1_vals else None
+        avg3 = round(sum(vl3_vals) / len(vl3_vals), 2) if vl3_vals else None
+        delta = round(avg3 - avg1, 2) if (avg1 is not None and avg3 is not None) else None
+        sw_vl1.append(avg1 or 0)
+        sw_vl3.append(avg3 or 0)
+        sw_delta.append(delta)
+
+    # ── 5. Verwijzers ────────────────────────────────────────────────
+    vl1_ref_rows = conn.execute(
+        f"SELECT verwijzer, huisartsenpraktijk FROM vragenlijst_1 WHERE client_id IN ({ph})",
+        client_ids
+    ).fetchall()
+    verw_counts = Counter(r['verwijzer'] for r in vl1_ref_rows if r['verwijzer'])
+    verwijzers = [{'naam': k, 'count': v} for k, v in verw_counts.most_common()]
+    ha_counts = Counter(r['huisartsenpraktijk'] for r in vl1_ref_rows if r['huisartsenpraktijk'])
+    huisartsen = [{'naam': k, 'count': v} for k, v in ha_counts.most_common()]
+
+    # ── 6. Signalering ───────────────────────────────────────────────
+    today = date.today()
+    drempel_datum = today - timedelta(days=90)
+    signalen_wachtend, signalen_uitgevallen, signalen_achteruitgang = [], [], []
+
+    for c in clients:
+        cid = c['id']
+        naam = c['voornaam']
+        if cid in vl3_ids:
+            link = f'/client/{cid}/vragenlijst/3/view'
+        elif cid in vl2_rows:
+            link = f'/client/{cid}/vragenlijst/2/view'
+        else:
+            link = f'/client/{cid}/vragenlijst/1/view'
+
+        if cid not in vl2_rows:
+            aangemaakt = date.fromisoformat(c['aangemaakt_op'][:10])
+            if aangemaakt <= drempel_datum:
+                maanden = (today.year - aangemaakt.year) * 12 + today.month - aangemaakt.month
+                signalen_wachtend.append({
+                    'naam': naam,
+                    'reden': f'Wacht al {maanden} maand{"en" if maanden != 1 else ""} op opvolging',
+                    'link': link,
+                    'type': 'wachtend',
+                })
+
+        if cid in uitgevallen_ids:
+            signalen_uitgevallen.append({
+                'naam': naam, 'reden': 'Uitgevallen', 'link': link, 'type': 'uitgevallen',
+            })
+
+        if cid in both_ids:
+            scores1 = calc_sw_scores(vl1_sw[cid])
+            scores3 = calc_sw_scores(vl3_sw[cid])
+            for dim in dim_names:
+                s1, s3 = scores1.get(dim), scores3.get(dim)
+                if s1 is not None and s3 is not None and (s3 - s1) < SIGNALERING_ACHTERUITGANG_DREMPEL:
+                    signalen_achteruitgang.append({
+                        'naam': naam,
+                        'reden': f'{dim}: {s3 - s1:+.1f}',
+                        'link': link,
+                        'type': 'achteruitgang',
+                    })
+                    break  # one signal per client
+
+    signalen = signalen_wachtend + signalen_uitgevallen + signalen_achteruitgang
+
+    # ── 7. Demografie ────────────────────────────────────────────────
+    vl1_demo = conn.execute(
+        f"SELECT geslacht, leeftijdscategorie FROM vragenlijst_1 WHERE client_id IN ({ph})",
+        client_ids
+    ).fetchall()
+    geslacht_counts = Counter(r['geslacht'] for r in vl1_demo if r['geslacht'])
+    leeftijd_counts = Counter(r['leeftijdscategorie'] for r in vl1_demo if r['leeftijdscategorie'])
+    demografie = {
+        'geslacht': [{'label': k, 'count': v} for k, v in geslacht_counts.most_common()],
+        'leeftijd': [{'label': k, 'count': v} for k, v in leeftijd_counts.most_common()],
+    }
+
+    # ── 8. Uitstroom ─────────────────────────────────────────────────
+    vl2_list = list(vl2_rows.values())
+    bestemming_counts = Counter(r['uitstroom_naar'] for r in vl2_list if r['uitstroom_naar'])
+    dv_ja = sum(1 for r in vl2_list if r['doorverwezen_ja_nee'] == 'Ja')
+    dv_nee = sum(1 for r in vl2_list if r['doorverwezen_ja_nee'] == 'Nee')
+    uitstroom = {
+        'bestemmingen': [{'label': k, 'count': v} for k, v in bestemming_counts.most_common()],
+        'doorverwezen_ja': dv_ja,
+        'doorverwezen_nee': dv_nee,
+    }
+
+    # ── 9. Contactmomenten ───────────────────────────────────────────
+    ff_vals = [r['contactmomenten_ff'] for r in vl2_list if r['contactmomenten_ff'] is not None]
+    tel_vals = [r['contactmomenten_tel'] for r in vl2_list if r['contactmomenten_tel'] is not None]
+    contactmomenten = {
+        'gem_ff': round(sum(ff_vals) / len(ff_vals), 1) if ff_vals else None,
+        'gem_tel': round(sum(tel_vals) / len(tel_vals), 1) if tel_vals else None,
+    }
+
+    conn.close()
+    return {
+        'kpis': kpis,
+        'sw_vl1': sw_vl1,
+        'sw_vl3': sw_vl3,
+        'sw_delta': sw_delta,
+        'sw_n': sw_n,
+        'sw_labels': dim_names,
+        'verwijzers': verwijzers,
+        'huisartsen': huisartsen,
+        'signalen': signalen,
+        'demografie': demografie,
+        'uitstroom': uitstroom,
+        'contactmomenten': contactmomenten,
+    }
