@@ -24,11 +24,24 @@
       {% endfor %}
     </ul>
     {% endif %}
+    <div class="small mt-2 text-muted">
+      {% if update_status.auto_update_supported %}
+      De app kan de update direct installeren en start daarna automatisch opnieuw.
+      {% else %}
+      Deze versie toont alleen de melding; automatisch bijwerken werkt in de verpakte Windows-app.
+      {% endif %}
+    </div>
   </div>
-  {% if update_status.download_url %}
-  <a href="{{ update_status.download_url }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-dark text-nowrap">
-    Download update
-  </a>
+  {% if update_status.auto_update_supported and update_status.download_url %}
+  <form method="post" action="{{ url_for('main.update_apply') }}" class="m-0">
+    <button type="submit" class="btn btn-sm btn-{{ 'danger' if update_status.required else 'dark' }} text-nowrap">
+      {% if update_status.required %}
+      Nu bijwerken
+      {% else %}
+      Update installeren
+      {% endif %}
+    </button>
+  </form>
   {% endif %}
 </div>
 {% endif %}

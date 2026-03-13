@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block title %}Update installeren — WoR{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-7">
+    <div class="card">
+      <div class="card-body p-4 p-lg-5">
+        <div class="d-flex align-items-center gap-3 mb-3">
+          <div class="spinner-border text-primary" role="status" aria-hidden="true"></div>
+          <div>
+            <h5 class="mb-1">Update wordt geïnstalleerd</h5>
+            <div class="text-muted small">
+              Versie {{ current_version }} wordt bijgewerkt naar {{ latest_version }}.
+            </div>
+          </div>
+        </div>
+
+        <p class="mb-3">
+          De app downloadt de nieuwe versie, sluit kort af en start daarna automatisch opnieuw.
+        </p>
+
+        <div class="alert alert-light border rounded-3 mb-0" id="update-status">
+          Verbinding wordt opnieuw opgebouwd. Dit scherm sluit vanzelf zodra de nieuwe versie actief is.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(() => {
+  const statusEl = document.getElementById('update-status');
+  let attempts = 0;
+
+  function reconnect() {
+    attempts += 1;
+    fetch('/', { cache: 'no-store', credentials: 'same-origin' })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('not-ready');
+        }
+        statusEl.textContent = 'Update voltooid. De app wordt opnieuw geopend.';
+        window.location.replace('/');
+      })
+      .catch(() => {
+        if (attempts >= 40) {
+          statusEl.textContent = 'De app wordt opnieuw gestart. Als dit scherm blijft staan, open WoR Registratie opnieuw.';
+          return;
+        }
+        setTimeout(reconnect, 1500);
+      });
+  }
+
+  setTimeout(reconnect, 2500);
+})();
+</script>
+{% endblock %}

@@ -1,4 +1,7 @@
 import io
+import os
+import threading
+import time
 from datetime import date
 from flask import Blueprint, render_template, request, redirect, url_for, flash, send_file, g
 from .models import (
@@ -9,7 +12,7 @@ from .models import (
     get_dashboard_data,
 )
 from . import get_coach_settings, save_coach_settings, GEMEENTEN
-from .updates import get_update_status
+from .updates import UpdateError, get_update_status, start_self_update
 from .version import APP_VERSION
 
 bp = Blueprint('main', __name__)
@@ -24,6 +27,14 @@ def load_coach():
 @bp.context_processor
 def inject_coach():
     return {'coach': g.coach, 'app_version': APP_VERSION}
+
+
+def _schedule_process_exit(delay_seconds=1.0):
+    def _exit_later():
+        time.sleep(delay_seconds)
+        os._exit(0)
+
+    threading.Thread(target=_exit_later, daemon=True).start()
 
 
 # ── Coach setup / wijzigen ────────────────────────────────────────────────────
@@ -90,6 +101,21 @@ def dashboard():
         periode = 'alles'
     data = get_dashboard_data(periode)
     return render_template('dashboard.html', periode=periode, **data)
+
+
+@bp.route('/update/apply', methods=['POST'])
+def update_apply():
+    if not g.coach.get('naam'):
+        return redirect(url_for('main.coach_setup'))
+
+    try:
+        update_result = start_self_update(force=True)
+    except UpdateError as exc:
+        flash(str(exc), 'danger')
+        return redirect(url_for('main.index'))
+
+    _schedule_process_exit(delay_seconds=1.2)
+    return render_template('update_installing.html', **update_result)
 
 
 # ── Client toevoegen / verwijderen ────────────────────────────────────────────
