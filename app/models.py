@@ -7,6 +7,28 @@ from . import get_db
 
 SIGNALERING_ACHTERUITGANG_DREMPEL = -1.0
 
+CONTINUERING_LABELS = {
+    'ja_actief': 'Nog actief',
+    'ja_ander': 'Andere activiteit',
+    'nee_gestopt': 'Gestopt',
+    'nee_nooit': 'Nooit gestart',
+}
+
+RADAR_FILTER_GROUPS = {
+    'alle': {'label': 'Alle deelnemers', 'source': None},
+    'verwijzer': {'label': 'Verwijzer', 'source': 'vl1', 'field': 'verwijzer'},
+    'hoofdreden': {'label': 'Hoofdreden aanmelding', 'source': 'vl2', 'field': 'hoofdreden'},
+    'continuering': {'label': 'Continuering', 'source': 'vl3', 'field': 'continuering'},
+    'behoefte': {'label': 'Ondersteuningsbehoefte', 'source': 'vl3', 'field': 'behoefte_ondersteuning'},
+}
+
+STATUS_FILTERS = {
+    'alle': 'Alle dossiers',
+    'actief': 'Actief',
+    'afgerond': 'Afgerond',
+    'uitgevallen': 'Uitgevallen',
+}
+
 
 def get_periode_range(periode):
     """Return (start_date, end_date) as date objects, or (None, None) for 'alles'.
@@ -98,6 +120,37 @@ def calc_sw_scores(row):
         vals = [row[f'sw_q{n}'] for (n, _) in questions if row[f'sw_q{n}'] is not None]
         scores[dim] = round(sum(vals) / len(vals), 1) if vals else None
     return scores
+
+
+def _normalize_choice(value):
+    if value is None:
+        return None
+    return str(value).strip().lower()
+
+
+def _parse_iso_date(value):
+    if not value:
+        return None
+    try:
+        return date.fromisoformat(str(value)[:10])
+    except ValueError:
+        return None
+
+
+def _client_status(client_id, vl1_ids, uitgevallen_ids, vl2_rows, vl3_ids):
+    if client_id in uitgevallen_ids:
+        return 'uitgevallen'
+    if client_id in vl1_ids and client_id in vl2_rows and client_id in vl3_ids:
+        return 'afgerond'
+    return 'actief'
+
+
+def _format_radar_value(group, value):
+    if value is None:
+        return None
+    if group == 'continuering':
+        return CONTINUERING_LABELS.get(value, value)
+    return value
 
 
 # ── Clients ───────────────────────────────────────────────────────────────────
@@ -255,10 +308,35 @@ def _empty_dashboard_data():
         'demografie': {'geslacht': [], 'leeftijd': []},
         'uitstroom': {'bestemmingen': [], 'doorverwezen_ja': 0, 'doorverwezen_nee': 0},
         'contactmomenten': {'gem_ff': None, 'gem_tel': None},
+        'doorstroom': {
+            'gem_verwijzing_intake': None,
+            'gem_intake_start': None,
+            'n_verwijzing_intake': 0,
+            'n_intake_start': 0,
+        },
+        'ondersteuning': [],
+        'continuering': [],
+        'aanmeldredenen': [],
+        'huisartsimpact': {'gem_vl1': None, 'gem_vl3': None, 'delta': None, 'n': 0},
+        'highlights': {
+            'top_verwijzer': None,
+            'top_aanmeldreden': None,
+            'sterkste_dimensie': None,
+            'sterkste_delta': None,
+        },
+        'filters': {
+            'status': 'alle',
+            'status_options': [],
+            'radar_group': 'alle',
+            'radar_group_options': [],
+            'radar_value': 'alle',
+            'radar_value_options': [],
+            'radar_scope_label': 'Alle deelnemers met intake en opvolging',
+        },
     }
 
 
-def get_dashboard_data(periode='alles'):
+def get_dashboard_data(periode='alles', status='alle', radar_group='alle', radar_value='alle'):
     """Aggregate all dashboard data for the given period.
 
     Returns a dict matching the template context contract in the design spec.
@@ -294,12 +372,40 @@ def get_dashboard_data(periode='alles'):
         f"SELECT * FROM vragenlijst_2 WHERE client_id IN ({ph})", client_ids
     ).fetchall()}
 
-    vl3_ids = {r['client_id'] for r in conn.execute(
-        f"SELECT client_id FROM vragenlijst_3 WHERE client_id IN ({ph})", client_ids
+    vl3_rows = {r['client_id']: r for r in conn.execute(
+        f"SELECT * FROM vragenlijst_3 WHERE client_id IN ({ph})", client_ids
     ).fetchall()}
+    vl3_ids = set(vl3_rows.keys())
+    uitgevallen_ids_all = {cid for cid, row in vl2_rows.items() if _normalize_choice(row['uitval_ja_nee']) == 'ja'}
+
+    status_counts = {'alle': len(client_ids), 'actief': 0, 'afgerond': 0, 'uitgevallen': len(uitgevallen_ids_all)}
+    status_by_id = {}
+    for cid in client_ids:
+        current_status = _client_status(cid, vl1_ids, uitgevallen_ids_all, vl2_rows, vl3_ids)
+        status_by_id[cid] = current_status
+        status_counts[current_status] += 1
+
+    status = status if status in STATUS_FILTERS else 'alle'
+    if status != 'alle':
+        client_ids = [cid for cid in client_ids if status_by_id[cid] == status]
+        clients = [client for client in clients if client['id'] in client_ids]
+        if not client_ids:
+            conn.close()
+            data = _empty_dashboard_data()
+            data['filters']['status'] = status
+            data['filters']['status_options'] = [
+                {'value': key, 'label': label, 'count': status_counts.get(key, 0)}
+                for key, label in STATUS_FILTERS.items()
+            ]
+            return data
+        vl1_ids = {cid for cid in vl1_ids if cid in client_ids}
+        vl2_rows = {cid: row for cid, row in vl2_rows.items() if cid in client_ids}
+        vl3_rows = {cid: row for cid, row in vl3_rows.items() if cid in client_ids}
+        vl3_ids = set(vl3_rows.keys())
+        ph = ','.join('?' * len(client_ids))
 
     # ── 3. KPIs ─────────────────────────────────────────────────────
-    uitgevallen_ids = {cid for cid, r in vl2_rows.items() if r['uitval_ja_nee'] == 'ja'}
+    uitgevallen_ids = {cid for cid, row in vl2_rows.items() if _normalize_choice(row['uitval_ja_nee']) == 'ja'}
     totaal = len(client_ids)
     uitgevallen = len(uitgevallen_ids)
     afgerond = sum(
@@ -338,6 +444,27 @@ def get_dashboard_data(periode='alles'):
     ).fetchall()}
 
     both_ids = set(vl1_sw.keys()) & set(vl3_sw.keys())
+    radar_group = radar_group if radar_group in RADAR_FILTER_GROUPS else 'alle'
+    radar_cfg = RADAR_FILTER_GROUPS[radar_group]
+    radar_value_counts = Counter()
+    if radar_cfg['source'] is not None:
+        source_rows = {'vl1': vl1_sw, 'vl2': vl2_rows, 'vl3': vl3_rows}[radar_cfg['source']]
+        radar_value_counts = Counter(
+            row[radar_cfg['field']] for row in source_rows.values() if row[radar_cfg['field']]
+        )
+    radar_value_options = [{'value': 'alle', 'label': 'Alle waarden'}]
+    radar_value_options.extend(
+        {'value': value, 'label': _format_radar_value(radar_group, value), 'count': count}
+        for value, count in radar_value_counts.most_common()
+    )
+    if radar_value not in {item['value'] for item in radar_value_options}:
+        radar_value = 'alle'
+    if radar_group != 'alle' and radar_value != 'alle':
+        source_rows = {'vl1': vl1_sw, 'vl2': vl2_rows, 'vl3': vl3_rows}[radar_cfg['source']]
+        both_ids = {
+            cid for cid in both_ids
+            if cid in source_rows and source_rows[cid][radar_cfg['field']] == radar_value
+        }
     sw_n = len(both_ids)
     dim_names = list(SW_QUESTIONS.keys())
     sw_vl1, sw_vl3, sw_delta = [], [], []
@@ -359,6 +486,12 @@ def get_dashboard_data(periode='alles'):
         sw_vl1.append(avg1)
         sw_vl3.append(avg3)
         sw_delta.append(delta)
+    delta_pairs = [
+        {'dimensie': dim_names[index], 'delta': sw_delta[index]}
+        for index in range(len(dim_names))
+        if sw_delta[index] is not None
+    ]
+    best_delta = max(delta_pairs, key=lambda item: item['delta']) if delta_pairs else None
 
     # ── 5. Verwijzers ────────────────────────────────────────────────
     vl1_ref_rows = conn.execute(
@@ -373,7 +506,11 @@ def get_dashboard_data(periode='alles'):
     # ── 6. Signalering ───────────────────────────────────────────────
     today = date.today()
     drempel_datum = today - timedelta(days=90)
-    signalen_wachtend, signalen_uitgevallen, signalen_achteruitgang = [], [], []
+    signalen_wachtend, signalen_ondersteuning, signalen_achteruitgang = [], [], []
+    ondersteuning_opties = {
+        'Ja, ik zou graag opnieuw contact met de welzijnscoach',
+        'Ja, ik denk dat ik professionele hulp nodig heb',
+    }
 
     for c in clients:
         cid = c['id']
@@ -386,8 +523,8 @@ def get_dashboard_data(periode='alles'):
             link = f'/client/{cid}/vragenlijst/1/view'
 
         if cid not in vl2_rows and c['aangemaakt_op']:
-            aangemaakt = date.fromisoformat(c['aangemaakt_op'][:10])
-            if aangemaakt <= drempel_datum:
+            aangemaakt = _parse_iso_date(c['aangemaakt_op'])
+            if aangemaakt and aangemaakt <= drempel_datum:
                 maanden = (today.year - aangemaakt.year) * 12 + today.month - aangemaakt.month
                 signalen_wachtend.append({
                     'naam': naam,
@@ -396,9 +533,13 @@ def get_dashboard_data(periode='alles'):
                     'type': 'wachtend',
                 })
 
-        if cid in uitgevallen_ids:
-            signalen_uitgevallen.append({
-                'naam': naam, 'reden': 'Uitgevallen', 'link': link, 'type': 'uitgevallen',
+        vl3_row = vl3_rows.get(cid)
+        if vl3_row and vl3_row['behoefte_ondersteuning'] in ondersteuning_opties:
+            signalen_ondersteuning.append({
+                'naam': naam,
+                'reden': vl3_row['behoefte_ondersteuning'],
+                'link': link,
+                'type': 'ondersteuning',
             })
 
         if cid in both_ids:
@@ -415,7 +556,7 @@ def get_dashboard_data(periode='alles'):
                     })
                     break  # one signal per client
 
-    signalen = signalen_wachtend + signalen_uitgevallen + signalen_achteruitgang
+    signalen = signalen_wachtend + signalen_ondersteuning + signalen_achteruitgang
 
     # ── 7. Demografie ────────────────────────────────────────────────
     vl1_demo = conn.execute(
@@ -432,8 +573,8 @@ def get_dashboard_data(periode='alles'):
     # ── 8. Uitstroom ─────────────────────────────────────────────────
     vl2_list = list(vl2_rows.values())
     bestemming_counts = Counter(r['uitstroom_naar'] for r in vl2_list if r['uitstroom_naar'])
-    dv_ja = sum(1 for r in vl2_list if r['doorverwezen_ja_nee'] == 'Ja')
-    dv_nee = sum(1 for r in vl2_list if r['doorverwezen_ja_nee'] == 'Nee')
+    dv_ja = sum(1 for r in vl2_list if _normalize_choice(r['doorverwezen_ja_nee']) == 'ja')
+    dv_nee = sum(1 for r in vl2_list if _normalize_choice(r['doorverwezen_ja_nee']) == 'nee')
     uitstroom = {
         'bestemmingen': [{'label': k, 'count': v} for k, v in bestemming_counts.most_common()],
         'doorverwezen_ja': dv_ja,
@@ -446,6 +587,87 @@ def get_dashboard_data(periode='alles'):
     contactmomenten = {
         'gem_ff': round(sum(ff_vals) / len(ff_vals), 1) if ff_vals else None,
         'gem_tel': round(sum(tel_vals) / len(tel_vals), 1) if tel_vals else None,
+    }
+
+    # ── 10. Doorstroom ───────────────────────────────────────────────
+    verw_intake_days, intake_start_days = [], []
+    for row in vl2_list:
+        d_verw = _parse_iso_date(row['datum_verwijzing'])
+        d_intake = _parse_iso_date(row['datum_intake'])
+        d_start = _parse_iso_date(row['datum_start_activiteit'])
+        if d_verw and d_intake and d_intake >= d_verw:
+            verw_intake_days.append((d_intake - d_verw).days)
+        if d_intake and d_start and d_start >= d_intake:
+            intake_start_days.append((d_start - d_intake).days)
+    doorstroom = {
+        'gem_verwijzing_intake': round(sum(verw_intake_days) / len(verw_intake_days), 1) if verw_intake_days else None,
+        'gem_intake_start': round(sum(intake_start_days) / len(intake_start_days), 1) if intake_start_days else None,
+        'n_verwijzing_intake': len(verw_intake_days),
+        'n_intake_start': len(intake_start_days),
+    }
+
+    # ── 11. Coachrelevante verdelingen ───────────────────────────────
+    ondersteuning_counts = Counter(
+        row['behoefte_ondersteuning'] for row in vl3_rows.values() if row['behoefte_ondersteuning']
+    )
+    continuering_counts = Counter(
+        row['continuering'] for row in vl3_rows.values() if row['continuering']
+    )
+    aanmeldreden_counts = Counter(
+        row['hoofdreden'] for row in vl2_rows.values() if row['hoofdreden']
+    )
+    ondersteuning = [{'label': label, 'count': count} for label, count in ondersteuning_counts.most_common()]
+    continuering = [
+        {'value': value, 'label': CONTINUERING_LABELS.get(value, value), 'count': count}
+        for value, count in continuering_counts.most_common()
+    ]
+    aanmeldredenen = [{'label': label, 'count': count} for label, count in aanmeldreden_counts.most_common()]
+
+    # ── 12. Huisartsimpact ───────────────────────────────────────────
+    vl1_huisarts_rows = {
+        row['client_id']: row for row in conn.execute(
+            f"SELECT client_id, huisartsbezoeken FROM vragenlijst_1 WHERE client_id IN ({ph})",
+            client_ids
+        ).fetchall()
+    }
+    huisarts_pairs = []
+    for cid in set(vl1_huisarts_rows.keys()) & set(vl3_rows.keys()):
+        huisarts_vl1 = vl1_huisarts_rows[cid]['huisartsbezoeken']
+        huisarts_vl3 = vl3_rows[cid]['huisartsbezoeken']
+        if huisarts_vl1 is not None and huisarts_vl3 is not None:
+            huisarts_pairs.append((huisarts_vl1, huisarts_vl3))
+    huisartsimpact = {
+        'gem_vl1': round(sum(v1 for v1, _ in huisarts_pairs) / len(huisarts_pairs), 1) if huisarts_pairs else None,
+        'gem_vl3': round(sum(v3 for _, v3 in huisarts_pairs) / len(huisarts_pairs), 1) if huisarts_pairs else None,
+        'delta': round(sum(v3 - v1 for v1, v3 in huisarts_pairs) / len(huisarts_pairs), 1) if huisarts_pairs else None,
+        'n': len(huisarts_pairs),
+    }
+
+    filters = {
+        'status': status,
+        'status_options': [
+            {'value': key, 'label': label, 'count': status_counts.get(key, 0)}
+            for key, label in STATUS_FILTERS.items()
+        ],
+        'radar_group': radar_group,
+        'radar_group_options': [
+            {'value': key, 'label': config['label']}
+            for key, config in RADAR_FILTER_GROUPS.items()
+        ],
+        'radar_value': radar_value,
+        'radar_value_options': radar_value_options,
+        'radar_scope_label': (
+            f"{RADAR_FILTER_GROUPS[radar_group]['label']}: {_format_radar_value(radar_group, radar_value)}"
+            if radar_group != 'alle' and radar_value != 'alle'
+            else 'Alle deelnemers met intake en opvolging'
+        ),
+    }
+
+    highlights = {
+        'top_verwijzer': verwijzers[0] if verwijzers else None,
+        'top_aanmeldreden': aanmeldredenen[0] if aanmeldredenen else None,
+        'sterkste_dimensie': best_delta['dimensie'] if best_delta else None,
+        'sterkste_delta': best_delta['delta'] if best_delta else None,
     }
 
     conn.close()
@@ -462,4 +684,11 @@ def get_dashboard_data(periode='alles'):
         'demografie': demografie,
         'uitstroom': uitstroom,
         'contactmomenten': contactmomenten,
+        'doorstroom': doorstroom,
+        'ondersteuning': ondersteuning,
+        'continuering': continuering,
+        'aanmeldredenen': aanmeldredenen,
+        'huisartsimpact': huisartsimpact,
+        'highlights': highlights,
+        'filters': filters,
     }

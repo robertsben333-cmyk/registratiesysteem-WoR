@@ -99,8 +99,28 @@ def dashboard():
     periode = request.args.get('periode', 'alles')
     if periode not in ('kwartaal', 'jaar', 'alles'):
         periode = 'alles'
-    data = get_dashboard_data(periode)
-    return render_template('dashboard.html', periode=periode, **data)
+    status_filter = request.args.get('status', 'alle')
+    radar_group = request.args.get('radar_group', 'alle')
+    radar_value = request.args.get('radar_value', 'alle')
+    data = get_dashboard_data(periode, status=status_filter, radar_group=radar_group, radar_value=radar_value)
+
+    actieve_per_uur = None
+    uren_per_week = g.coach.get('uren_per_week')
+    if uren_per_week:
+        try:
+            uren_per_week = float(uren_per_week)
+            if uren_per_week > 0:
+                actieve_per_uur = round(data['kpis']['actief'] / uren_per_week, 2)
+        except (TypeError, ValueError):
+            uren_per_week = None
+
+    coach_overview = {
+        'uren_per_week': uren_per_week,
+        'actieve_per_uur': actieve_per_uur,
+        'signalen_totaal': len(data['signalen']),
+    }
+
+    return render_template('dashboard.html', periode=periode, coach_overview=coach_overview, **data)
 
 
 @bp.route('/update/apply', methods=['POST'])

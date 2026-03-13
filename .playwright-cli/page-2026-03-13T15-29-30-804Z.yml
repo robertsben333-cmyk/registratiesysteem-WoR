@@ -1,0 +1,160 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e3]:
+      - link "● Welzijn op Recept Registratie v1.2.0" [ref=e4] [cursor=pointer]:
+        - /url: /
+        - text: ● Welzijn op Recept
+        - generic [ref=e5]: Registratie v1.2.0
+      - generic [ref=e6]:
+        - link "Dashboard" [ref=e7] [cursor=pointer]:
+          - /url: /dashboard
+        - generic [ref=e8]: "Welzijnscoach - Venlo · Venlo #75333H"
+        - link "Wijzigen" [ref=e9] [cursor=pointer]:
+          - /url: /setup
+  - generic [ref=e11]:
+    - generic [ref=e12]:
+      - generic [ref=e13]:
+        - generic [ref=e14]:
+          - paragraph [ref=e15]: Welzijnscoach-dashboard
+          - heading "Sturen op caseload, impact en doorstroom" [level=1] [ref=e16]
+          - paragraph [ref=e17]:
+            - text: Focus op Alle dossiers binnen de periode
+            - strong [ref=e18]: alles
+            - text: .
+        - generic [ref=e19]:
+          - generic [ref=e20]:
+            - generic [ref=e21]: Actieve dossiers per uur
+            - generic [ref=e22]: "0.12"
+          - generic [ref=e23]:
+            - generic [ref=e24]: Beschikbare WoR-uren p/w
+            - generic [ref=e25]: "16.0"
+          - generic [ref=e26]:
+            - generic [ref=e27]: Signalen nu
+            - generic [ref=e28]: "1"
+      - generic [ref=e29]:
+        - generic [ref=e30]:
+          - generic [ref=e31]: Belangrijkste verwijzer
+          - strong [ref=e32]: Huisarts
+          - generic [ref=e33]: 1 dossiers
+        - generic [ref=e34]:
+          - generic [ref=e35]: Meeste aanmeldreden
+          - strong [ref=e36]: Stress of overbelasting
+          - generic [ref=e37]: 1 deelnemers
+        - generic [ref=e38]:
+          - generic [ref=e39]: Sterkste gemiddelde groei
+          - strong [ref=e40]: Lichaamsfuncties
+          - generic [ref=e41]: "+0.0"
+    - generic [ref=e42]:
+      - generic [ref=e43]:
+        - generic [ref=e44]: Periode
+        - link "Kwartaal" [ref=e45] [cursor=pointer]:
+          - /url: /dashboard?periode=kwartaal&status=alle&radar_group=alle&radar_value=alle
+        - link "Jaar" [ref=e46] [cursor=pointer]:
+          - /url: /dashboard?periode=jaar&status=alle&radar_group=alle&radar_value=alle
+        - link "Alles" [ref=e47] [cursor=pointer]:
+          - /url: /dashboard?periode=alles&status=alle&radar_group=alle&radar_value=alle
+      - generic [ref=e48]:
+        - generic [ref=e49]: Focus
+        - link "Alle dossiers 3" [ref=e50] [cursor=pointer]:
+          - /url: /dashboard?periode=alles&status=alle&radar_group=alle&radar_value=alle
+          - generic [ref=e51]: Alle dossiers
+          - strong [ref=e52]: "3"
+        - link "Actief 2" [ref=e53] [cursor=pointer]:
+          - /url: /dashboard?periode=alles&status=actief&radar_group=alle&radar_value=alle
+          - generic [ref=e54]: Actief
+          - strong [ref=e55]: "2"
+        - link "Afgerond 1" [ref=e56] [cursor=pointer]:
+          - /url: /dashboard?periode=alles&status=afgerond&radar_group=alle&radar_value=alle
+          - generic [ref=e57]: Afgerond
+          - strong [ref=e58]: "1"
+        - link "Uitgevallen 0" [ref=e59] [cursor=pointer]:
+          - /url: /dashboard?periode=alles&status=uitgevallen&radar_group=alle&radar_value=alle
+          - generic [ref=e60]: Uitgevallen
+          - strong [ref=e61]: "0"
+    - generic [ref=e62]:
+      - article [ref=e64]:
+        - generic [ref=e65]:
+          - generic [ref=e66]: Totaal dossiers
+          - generic [ref=e67]: "3"
+          - text: In huidige focus
+      - article [ref=e69]:
+        - generic [ref=e70]:
+          - generic [ref=e71]: Actief
+          - generic [ref=e72]: "2"
+          - text: Nog niet volledig afgerond
+      - article [ref=e74]:
+        - generic [ref=e75]:
+          - generic [ref=e76]: Afgerond
+          - generic [ref=e77]: "1"
+          - text: Met alle 3 vragenlijsten
+      - article [ref=e79]:
+        - generic [ref=e80]:
+          - generic [ref=e81]: Uitgevallen
+          - generic [ref=e82]: "0"
+          - text: Traject vroegtijdig gestopt
+      - article [ref=e84]:
+        - generic [ref=e85]:
+          - generic [ref=e86]: Gem. tevredenheid
+          - generic [ref=e87]: "6.0"
+          - text: Score uit VL3
+    - tablist [ref=e88]:
+      - tab "Caseload" [selected] [ref=e89] [cursor=pointer]
+      - tab "Impact" [ref=e90] [cursor=pointer]
+      - tab "Instroom en doorstroom" [ref=e91] [cursor=pointer]
+    - tabpanel [ref=e93]:
+      - generic [ref=e94]:
+        - generic [ref=e96]:
+          - generic [ref=e97]:
+            - generic [ref=e98]:
+              - heading "Aandacht vereist" [level=2] [ref=e99]
+              - paragraph [ref=e100]: Prioriteiten voor de welzijnscoach op basis van wachttijd, ondersteuningsvraag en terugval.
+            - generic [ref=e101]: 1 signalen
+          - table [ref=e104]:
+            - rowgroup [ref=e105]:
+              - row "Deelnemer Signaal Actie" [ref=e106]:
+                - columnheader "Deelnemer" [ref=e107]
+                - columnheader "Signaal" [ref=e108]
+                - columnheader "Actie" [ref=e109]
+            - rowgroup [ref=e110]:
+              - row "Jan Ja, ik zou graag opnieuw contact met de welzijnscoach Bekijk dossier" [ref=e111]:
+                - cell "Jan" [ref=e112]
+                - cell "Ja, ik zou graag opnieuw contact met de welzijnscoach" [ref=e113]:
+                  - generic [ref=e114]: Ja, ik zou graag opnieuw contact met de welzijnscoach
+                - cell "Bekijk dossier" [ref=e115]:
+                  - link "Bekijk dossier" [ref=e116] [cursor=pointer]:
+                    - /url: /client/2/vragenlijst/3/view
+        - generic [ref=e118]:
+          - generic [ref=e120]:
+            - generic [ref=e122]:
+              - heading "Coachcapaciteit" [level=2] [ref=e123]
+              - paragraph [ref=e124]: Een snelle indicatie van druk op het trajectwerk.
+            - generic [ref=e126]:
+              - generic [ref=e127]:
+                - generic [ref=e128]: Beschikbare uren per week
+                - strong [ref=e129]: "16.0"
+              - generic [ref=e130]:
+                - generic [ref=e131]: Actieve dossiers per uur
+                - strong [ref=e132]: "0.12"
+              - generic [ref=e133]:
+                - generic [ref=e134]: Openstaande aandachtspunten
+                - strong [ref=e135]: "1"
+          - generic [ref=e137]:
+            - generic [ref=e139]:
+              - heading "Gemiddelde contacturen" [level=2] [ref=e140]
+              - paragraph [ref=e141]: VL2 registreert uren, niet het aantal losse contactmomenten.
+            - generic [ref=e143]:
+              - generic [ref=e144]:
+                - generic [ref=e145]: "3.0"
+                - generic [ref=e146]: uur face-to-face
+                - generic [ref=e147]: inclusief administratie
+              - generic [ref=e148]:
+                - generic [ref=e149]: "5.0"
+                - generic [ref=e150]: uur telefonisch
+                - generic [ref=e151]: inclusief administratie
+          - generic [ref=e153]:
+            - generic [ref=e155]:
+              - heading "Ondersteuningsbehoefte" [level=2] [ref=e156]
+              - paragraph [ref=e157]: Wat deelnemers bij de opvolging teruggeven.
+            - generic [ref=e162]:
+              - generic [ref=e163]: Ja, ik zou graag opnieuw contact met de welzijnscoach
+              - strong [ref=e164]: "1"

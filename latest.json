@@ -1,13 +1,14 @@
 {
-  "version": "1.2.0",
+  "version": "1.3.0",
   "min_supported_version": "0.1.0",
   "published_at": "2026-03-13",
   "notes": [
+    "Dashboardnavigatie verduidelijkt en dashboard-knop in cliëntenoverzicht prominenter gemaakt.",
     "Nieuw: Welzijnscoach dashboard met KPI's, spinnenweb, verwijzers en signalering.",
     "App sluit automatisch af als de browser wordt gesloten.",
     "In-app update melding en installatie voor Windows."
   ],
   "windows": {
-    "url": "https://github.com/robertsben333-cmyk/registratiesysteem-WoR/releases/download/v1.2.0/WoR-Registratie-1.2.0-windows.zip"
+    "url": "https://github.com/robertsben333-cmyk/registratiesysteem-WoR/releases/download/v1.3.0/WoR-Registratie-1.3.0-windows.zip"
   }
 }

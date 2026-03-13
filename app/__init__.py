@@ -189,8 +189,6 @@ def create_app():
     ).strip()
     app.config['UPDATE_MANIFEST_PATH'] = LOCAL_UPDATE_MANIFEST_PATH
     app.config['UPDATE_MANIFEST_BUNDLED_PATH'] = BUNDLED_UPDATE_MANIFEST_PATH
-    app.config['UPDATE_CHECK_INTERVAL'] = 6 * 60 * 60
-
     prepare_storage()
     init_db()
 

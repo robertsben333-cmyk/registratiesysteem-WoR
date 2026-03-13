@@ -100,7 +100,7 @@ Het `huisartsenpraktijk`-veld is vrije tekst; er is bewust geen deduplicatie van
 
 ---
 
-## 7. Signalering-widget ("Aandacht vereist")
+## 7. Signalering-widget ("Opvolging mogelijk")
 
 **Positie:** Widget rechtsboven, prominent
 
@@ -109,12 +109,14 @@ Het `huisartsenpraktijk`-veld is vrije tekst; er is bewust geen deduplicatie van
 **Drie categorieën signalen, in deze volgorde:**
 
 1. **Lang wachtend** — `clients.aangemaakt_op` > 3 maanden geleden, én **VL2 is nog niet ingevuld** (ongeacht VL3). Een client zonder VL2 na 3 maanden wordt als stalled beschouwd.
-2. **Uitgevallen** — `uitval_ja_nee = 'ja'` in VL2, ongeacht VL3-status
+2. **Verdere ondersteuningsbehoefte** — `vragenlijst_3.behoefte_ondersteuning` is:
+   - `Ja, ik zou graag opnieuw contact met de welzijnscoach`
+   - `Ja, ik denk dat ik professionele hulp nodig heb`
 3. **Achteruitgang** — **enige dimensie** waarbij Δ (VL3 − VL1) < `SIGNALERING_ACHTERUITGANG_DREMPEL` (−1.0). Niet het totaalgemiddelde, maar per dimensie afzonderlijk.
 
 Per signaal wordt getoond:
 - Naam deelnemer
-- Reden (bijv. "Wacht al 4 maanden", "Uitgevallen", "Mentaal welbevinden: −1.4")
+- Reden (bijv. "Wacht al 4 maanden", "Ja, ik zou graag opnieuw contact met de welzijnscoach", "Mentaal welbevinden: −1.4")
 - Knop "Bekijk dossier" → link naar meest relevante view:
   - VL3 ingevuld → `/client/<id>/vragenlijst/3/view`
   - VL2 ingevuld, geen VL3 → `/client/<id>/vragenlijst/2/view`

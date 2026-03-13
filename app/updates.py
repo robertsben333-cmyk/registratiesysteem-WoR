@@ -112,10 +112,9 @@ def get_update_status(force=False):
         'checked_at': 0,
         'result': _default_status(),
     })
-    now = time.time()
-    ttl = int(app.config.get('UPDATE_CHECK_INTERVAL', 0) or 0)
 
-    if not force and cache['checked_at'] and ttl > 0 and now - cache['checked_at'] < ttl:
+    # Check once per app process. A restart triggers a fresh remote check.
+    if not force and cache['checked_at']:
         return cache['result']
 
     result = _default_status()
@@ -127,7 +126,7 @@ def get_update_status(force=False):
     except (json.JSONDecodeError, OSError, URLError, ValueError):
         result = _default_status()
 
-    cache['checked_at'] = now
+    cache['checked_at'] = time.time()
     cache['result'] = result
     return result
 

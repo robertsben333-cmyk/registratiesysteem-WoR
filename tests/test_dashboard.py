@@ -36,6 +36,7 @@ def test_get_dashboard_data_no_clients(db):
     assert data['kpis']['actief'] == 0
     assert data['sw_n'] == 0
     assert data['signalen'] == []
+    assert data['doorstroom']['gem_verwijzing_intake'] is None
 
 
 def test_kpis_basic(db, db_path):
@@ -81,6 +82,39 @@ def test_signaal_lang_wachtend(db, db_path):
 
     data = get_dashboard_data('alles')
     assert any(s['type'] == 'wachtend' for s in data['signalen'])
+
+
+def test_signaal_ondersteuningsbehoefte_via_vl3(db, db_path):
+    import sqlite3
+    conn = sqlite3.connect(db_path)
+    conn.execute("INSERT INTO clients (voornaam) VALUES ('Eva')")
+    cid = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+    conn.execute("INSERT INTO vragenlijst_1 (client_id) VALUES (?)", (cid,))
+    conn.execute(
+        "INSERT INTO vragenlijst_3 (client_id, behoefte_ondersteuning) VALUES (?, ?)",
+        (cid, 'Ja, ik zou graag opnieuw contact met de welzijnscoach')
+    )
+    conn.commit()
+    conn.close()
+
+    data = get_dashboard_data('alles')
+    signaal = next((s for s in data['signalen'] if s['type'] == 'ondersteuning'), None)
+    assert signaal is not None
+    assert signaal['reden'] == 'Ja, ik zou graag opnieuw contact met de welzijnscoach'
+
+
+def test_uitval_is_geen_aandacht_vereist_signaal(db, db_path):
+    import sqlite3
+    conn = sqlite3.connect(db_path)
+    conn.execute("INSERT INTO clients (voornaam) VALUES ('Finn')")
+    cid = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+    conn.execute("INSERT INTO vragenlijst_1 (client_id) VALUES (?)", (cid,))
+    conn.execute("INSERT INTO vragenlijst_2 (client_id, uitval_ja_nee) VALUES (?, 'ja')", (cid,))
+    conn.commit()
+    conn.close()
+
+    data = get_dashboard_data('alles')
+    assert not any(s['type'] == 'uitgevallen' for s in data['signalen'])
 
 
 def test_signaal_achteruitgang(db, db_path):
@@ -130,3 +164,65 @@ def test_verwijzers_counted(db, db_path):
     huisarts_entry = next((v for v in data['verwijzers'] if v['naam'] == 'Huisarts'), None)
     assert huisarts_entry is not None
     assert huisarts_entry['count'] == 2
+
+
+def test_doorverwijzing_lowercase_values_counted(db, db_path):
+    import sqlite3
+    conn = sqlite3.connect(db_path)
+    conn.execute("INSERT INTO clients (voornaam) VALUES ('A')")
+    cid1 = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+    conn.execute("INSERT INTO vragenlijst_2 (client_id, doorverwezen_ja_nee) VALUES (?, 'ja')", (cid1,))
+    conn.execute("INSERT INTO clients (voornaam) VALUES ('B')")
+    cid2 = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+    conn.execute("INSERT INTO vragenlijst_2 (client_id, doorverwezen_ja_nee) VALUES (?, 'nee')", (cid2,))
+    conn.commit()
+    conn.close()
+
+    data = get_dashboard_data('alles')
+    assert data['uitstroom']['doorverwezen_ja'] == 1
+    assert data['uitstroom']['doorverwezen_nee'] == 1
+
+
+def test_dashboard_status_filter_and_radar_filter(db, db_path):
+    import sqlite3
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+
+    # Actief dossier zonder VL3
+    conn.execute("INSERT INTO clients (voornaam) VALUES ('Actief')")
+    actief_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+    conn.execute("INSERT INTO vragenlijst_1 (client_id, verwijzer) VALUES (?, 'Huisarts')", (actief_id,))
+    conn.execute("INSERT INTO vragenlijst_2 (client_id, hoofdreden) VALUES (?, 'Eenzaamheid')", (actief_id,))
+
+    # Afgerond dossier met beide metingen
+    conn.execute("INSERT INTO clients (voornaam) VALUES ('Afgerond')")
+    afgerond_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+    vl1_vals = {f'sw_q{i}': 4 for i in range(1, 45)}
+    vl3_vals = {f'sw_q{i}': 6 for i in range(1, 45)}
+    cols = ', '.join(vl1_vals.keys())
+    placeholders = ', '.join('?' * len(vl1_vals))
+    conn.execute(
+        f"INSERT INTO vragenlijst_1 (client_id, verwijzer, {cols}) VALUES (?, 'Wijkteam', {placeholders})",
+        [afgerond_id] + list(vl1_vals.values())
+    )
+    conn.execute(
+        "INSERT INTO vragenlijst_2 (client_id, hoofdreden) VALUES (?, 'Stress of overbelasting')",
+        (afgerond_id,)
+    )
+    cols3 = ', '.join(vl3_vals.keys())
+    placeholders3 = ', '.join('?' * len(vl3_vals))
+    conn.execute(
+        f"INSERT INTO vragenlijst_3 (client_id, continuering, {cols3}) VALUES (?, 'ja_actief', {placeholders3})",
+        [afgerond_id] + list(vl3_vals.values())
+    )
+
+    conn.commit()
+    conn.close()
+
+    actief = get_dashboard_data('alles', status='actief')
+    assert actief['kpis']['totaal'] == 1
+    assert actief['filters']['status'] == 'actief'
+
+    radar = get_dashboard_data('alles', radar_group='continuering', radar_value='ja_actief')
+    assert radar['sw_n'] == 1
+    assert radar['filters']['radar_scope_label'] == 'Continuering: Nog actief'
