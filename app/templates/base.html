@@ -53,5 +53,12 @@
 
 <script src="{{ url_for('static', filename='bootstrap.bundle.min.js') }}"></script>
 {% block scripts %}{% endblock %}
+<script>
+  (function () {
+    function ping() { fetch('/ping', { method: 'POST' }).catch(function(){}); }
+    ping();
+    setInterval(ping, 5000);
+  })();
+</script>
 </body>
 </html>

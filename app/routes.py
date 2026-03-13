@@ -3,7 +3,7 @@ import os
 import threading
 import time
 from datetime import date
-from flask import Blueprint, render_template, request, redirect, url_for, flash, send_file, g
+from flask import Blueprint, render_template, request, redirect, url_for, flash, send_file, g, current_app
 from .models import (
     get_all_clients, get_client, add_client, delete_client,
     get_clients_by_first_name,
@@ -420,6 +420,7 @@ def export_excel():
     coach = get_coach_settings()
     coach_id = coach.get('coach_id', '')
     gemeente = coach.get('gemeente', '')
+    uren_per_week = coach.get('uren_per_week', '')
 
     wb = Workbook()
 
@@ -430,7 +431,7 @@ def export_excel():
     hdr_fill = PatternFill("solid", fgColor="D9D9D9")
 
     headers = [
-        'Deelnemer ID', 'Welzijnscoach ID', 'Gemeente', 'Aangemaakt op',
+        'Deelnemer ID', 'Welzijnscoach ID', 'Gemeente', 'Uren beschikbaar voor WoR', 'Aangemaakt op',
         # VL1
         'VL1: Verwijzer', 'VL1: Geslacht', 'VL1: Leeftijdscategorie',
         'VL1: Woonsituatie', 'VL1: Werkstatus', 'VL1: Eerder hulp',
@@ -453,7 +454,7 @@ def export_excel():
         cell.fill = hdr_fill
 
     for row in rows:
-        ws1.append([anon_map[row['id']], coach_id, gemeente, row['aangemaakt_op']]
+        ws1.append([anon_map[row['id']], coach_id, gemeente, uren_per_week, row['aangemaakt_op']]
                    + [row[i] for i in range(3, len(row))])
 
     for col in ws1.columns:
@@ -514,6 +515,14 @@ def export_excel():
     filename = f"wor_export_{date.today().isoformat()}.xlsx"
     return send_file(output, as_attachment=True, download_name=filename,
                      mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
+
+# ── Heartbeat (browser-open watchdog) ────────────────────────────────────────
+
+@bp.route('/ping', methods=['POST'])
+def ping():
+    current_app.config['LAST_PING'] = time.time()
+    return '', 204
 
 
 # ── 404 ───────────────────────────────────────────────────────────────────────
