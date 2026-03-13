@@ -1,0 +1,325 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard — WoR Registratie{% endblock %}
+
+{% block content %}
+{# ── Sticky filter bar ─────────────────────────────────────────────────── #}
+<div class="sticky-top bg-white border-bottom py-2 mb-4 shadow-sm" style="z-index:100;">
+  <div class="d-flex align-items-center gap-2">
+    <span class="fw-semibold me-2 text-muted small">Periode:</span>
+    {% for label, value in [('Kwartaal', 'kwartaal'), ('Jaar', 'jaar'), ('Alles', 'alles')] %}
+      <a href="{{ url_for('main.dashboard', periode=value) }}"
+         class="btn btn-sm {% if periode == value %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+        {{ label }}
+      </a>
+    {% endfor %}
+  </div>
+</div>
+
+{% if kpis.totaal == 0 %}
+  <div class="alert alert-secondary">Geen data beschikbaar voor de geselecteerde periode.</div>
+{% else %}
+
+{# ── KPI row ──────────────────────────────────────────────────────────── #}
+<div class="row row-cols-2 row-cols-md-5 g-3 mb-4">
+  {% set kpi_items = [
+    ('Totaal', kpis.totaal, 'primary'),
+    ('Actief', kpis.actief, 'warning'),
+    ('Afgerond', kpis.afgerond, 'success'),
+    ('Uitgevallen', kpis.uitgevallen, 'danger'),
+    ('Gem. tevredenheid', kpis.gem_tevredenheid if kpis.gem_tevredenheid is not none else '—', 'info'),
+  ] %}
+  {% for label, value, color in kpi_items %}
+  <div class="col">
+    <div class="card h-100 border-0 shadow-sm text-center">
+      <div class="card-body py-3">
+        <div class="display-6 fw-bold text-{{ color }}">{{ value }}</div>
+        <div class="small text-muted mt-1">{{ label }}</div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{# ── Row 1: Spinnenweb (col-8) + Verwijzers (col-4) ──────────────────── #}
+<div class="row g-4 mb-4">
+  {# Spinnenweb #}
+  <div class="col-12 col-lg-8">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-transparent fw-semibold">Spinnenweb: intake vs opvolging</div>
+      <div class="card-body">
+        {% if sw_n == 0 %}
+          <p class="text-muted">Nog geen deelnemers met zowel intake als opvolging.</p>
+        {% else %}
+          <p class="text-muted small mb-3">Gebaseerd op {{ sw_n }} deelnemer{{ 's' if sw_n != 1 else '' }} met intake én opvolging.</p>
+          <div class="d-flex justify-content-center mb-3">
+            <canvas id="dashboardRadar" width="380" height="340"></canvas>
+          </div>
+          {# Delta table #}
+          <table class="table table-sm table-borderless">
+            <thead><tr>
+              <th>Dimensie</th>
+              <th class="text-end">Gem. intake</th>
+              <th class="text-end">Gem. opvolging</th>
+              <th class="text-end">Δ</th>
+            </tr></thead>
+            <tbody>
+            {% for i in range(6) %}
+              {% set delta = sw_delta[i] %}
+              {% if delta is not none %}
+                {% if delta > 0.2 %}
+                  {% set cls = 'text-success fw-semibold' %}
+                  {% set prefix = '+' %}
+                {% elif delta < -0.2 %}
+                  {% set cls = 'text-danger fw-semibold' %}
+                  {% set prefix = '' %}
+                {% else %}
+                  {% set cls = 'text-muted' %}
+                  {% set prefix = '+' if delta >= 0 else '' %}
+                {% endif %}
+              {% else %}
+                {% set cls = '' %}
+                {% set prefix = '' %}
+              {% endif %}
+              <tr>
+                <td>{{ sw_labels[i] }}</td>
+                <td class="text-end">{{ '%.1f' % sw_vl1[i] if sw_vl1[i] is not none else '—' }}</td>
+                <td class="text-end">{{ '%.1f' % sw_vl3[i] if sw_vl3[i] is not none else '—' }}</td>
+                <td class="text-end {{ cls }}">
+                  {% if delta is not none %}{{ prefix }}{{ '%.1f' % delta }}{% else %}—{% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  {# Verwijzers #}
+  <div class="col-12 col-lg-4">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-transparent fw-semibold">Verwijzers</div>
+      <div class="card-body">
+        {% if not verwijzers %}
+          <p class="text-muted">Geen data.</p>
+        {% else %}
+          <canvas id="verwijzersChart" height="180"></canvas>
+          {% if huisartsen %}
+            <hr class="my-3">
+            <p class="fw-semibold small mb-2">Huisartsenpraktijken</p>
+            <ul class="list-unstyled mb-0">
+              {% for h in huisartsen %}
+                <li class="d-flex justify-content-between py-1 border-bottom">
+                  <span class="small">{{ h.naam }}</span>
+                  <span class="badge bg-secondary rounded-pill">{{ h.count }}</span>
+                </li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{# ── Row 2: Signalering ───────────────────────────────────────────────── #}
+<div class="row g-4 mb-4">
+  <div class="col-12">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-transparent fw-semibold">Aandacht vereist</div>
+      <div class="card-body">
+        {% if not signalen %}
+          <div class="alert alert-success mb-0">
+            ✓ Alle deelnemers zijn op schema.
+          </div>
+        {% else %}
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+              <thead><tr>
+                <th>Deelnemer</th>
+                <th>Signaal</th>
+                <th></th>
+              </tr></thead>
+              <tbody>
+              {% for s in signalen %}
+                {% if s.type == 'wachtend' %}{% set badge = 'warning' %}
+                {% elif s.type == 'uitgevallen' %}{% set badge = 'danger' %}
+                {% else %}{% set badge = 'secondary' %}{% endif %}
+                <tr>
+                  <td class="fw-semibold">{{ s.naam }}</td>
+                  <td><span class="badge bg-{{ badge }}">{{ s.reden }}</span></td>
+                  <td class="text-end">
+                    <a href="{{ s.link }}" class="btn btn-sm btn-outline-primary">Bekijk dossier</a>
+                  </td>
+                </tr>
+              {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{# ── Row 3: Demografie + Uitstroom + Contactmomenten ─────────────────── #}
+<div class="row g-4">
+  {# Demografie #}
+  <div class="col-12 col-md-4">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-transparent fw-semibold">Demografie</div>
+      <div class="card-body">
+        {% if not demografie.geslacht and not demografie.leeftijd %}
+          <p class="text-muted">Geen data.</p>
+        {% else %}
+          {% if demografie.geslacht %}
+            <p class="small fw-semibold text-muted mb-1">Geslacht</p>
+            {% set totaal_g = demografie.geslacht | sum(attribute='count') %}
+            {% for item in demografie.geslacht %}
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <span class="small">{{ item.label }}</span>
+                <span class="small text-muted">{{ item.count }} ({{ (item.count / totaal_g * 100) | round | int }}%)</span>
+              </div>
+              <div class="progress mb-2" style="height:6px;">
+                <div class="progress-bar" style="width:{{ (item.count / totaal_g * 100) | round | int }}%"></div>
+              </div>
+            {% endfor %}
+          {% endif %}
+          {% if demografie.leeftijd %}
+            <p class="small fw-semibold text-muted mt-3 mb-1">Leeftijd</p>
+            {% for item in demografie.leeftijd %}
+              <div class="d-flex justify-content-between mb-1">
+                <span class="small">{{ item.label }}</span>
+                <span class="badge bg-secondary rounded-pill">{{ item.count }}</span>
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  {# Uitstroom #}
+  <div class="col-12 col-md-4">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-transparent fw-semibold">Uitstroom</div>
+      <div class="card-body">
+        {% if not uitstroom.bestemmingen %}
+          <p class="text-muted">Geen data.</p>
+        {% else %}
+          <p class="small fw-semibold text-muted mb-1">Bestemming</p>
+          {% for item in uitstroom.bestemmingen %}
+            <div class="d-flex justify-content-between mb-1">
+              <span class="small">{{ item.label }}</span>
+              <span class="badge bg-secondary rounded-pill">{{ item.count }}</span>
+            </div>
+          {% endfor %}
+          <hr class="my-3">
+          <p class="small fw-semibold text-muted mb-2">Doorverwezen</p>
+          <div class="d-flex gap-3">
+            <div class="text-center">
+              <div class="fs-4 fw-bold text-success">{{ uitstroom.doorverwezen_ja }}</div>
+              <div class="small text-muted">Ja</div>
+            </div>
+            <div class="text-center">
+              <div class="fs-4 fw-bold text-secondary">{{ uitstroom.doorverwezen_nee }}</div>
+              <div class="small text-muted">Nee</div>
+            </div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  {# Contactmomenten #}
+  <div class="col-12 col-md-4">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-transparent fw-semibold">Contactmomenten (gem.)</div>
+      <div class="card-body d-flex align-items-center justify-content-around">
+        <div class="text-center">
+          <div class="display-5 fw-bold text-primary">
+            {{ contactmomenten.gem_ff if contactmomenten.gem_ff is not none else '—' }}
+          </div>
+          <div class="small text-muted mt-1">Face-to-face</div>
+        </div>
+        <div class="vr"></div>
+        <div class="text-center">
+          <div class="display-5 fw-bold text-info">
+            {{ contactmomenten.gem_tel if contactmomenten.gem_tel is not none else '—' }}
+          </div>
+          <div class="small text-muted mt-1">Telefonisch</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endif %}{# end if kpis.totaal > 0 #}
+{% endblock %}
+
+{% block scripts %}
+{% if kpis.totaal > 0 %}
+<script src="{{ url_for('static', filename='chart.umd.min.js') }}"></script>
+<script>
+// ── Radar chart ──────────────────────────────────────────────────────────────
+{% if sw_n > 0 %}
+(function() {
+  const ctx = document.getElementById('dashboardRadar').getContext('2d');
+  new Chart(ctx, {
+    type: 'radar',
+    data: {
+      labels: {{ sw_labels | tojson }},
+      datasets: [
+        {
+          label: 'Intake (VL1)',
+          data: {{ sw_vl1 | tojson }},
+          borderColor: 'rgba(30,111,142,0.7)',
+          backgroundColor: 'rgba(30,111,142,0.08)',
+          borderDash: [5, 4],
+          pointRadius: 3,
+        },
+        {
+          label: 'Opvolging (VL3)',
+          data: {{ sw_vl3 | tojson }},
+          borderColor: 'rgba(40,160,98,0.9)',
+          backgroundColor: 'rgba(40,160,98,0.12)',
+          pointRadius: 4,
+        },
+      ],
+    },
+    options: {
+      scales: { r: { min: 0, max: 10, ticks: { stepSize: 2 } } },
+      plugins: { legend: { position: 'bottom' } },
+    },
+  });
+})();
+{% endif %}
+
+// ── Verwijzers bar chart ─────────────────────────────────────────────────────
+{% if verwijzers %}
+(function() {
+  const ctx = document.getElementById('verwijzersChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: {{ verwijzers | map(attribute='naam') | list | tojson }},
+      datasets: [{
+        label: 'Aantal',
+        data: {{ verwijzers | map(attribute='count') | list | tojson }},
+        backgroundColor: 'rgba(232,147,58,0.7)',
+        borderColor: 'rgba(232,147,58,1)',
+        borderWidth: 1,
+      }],
+    },
+    options: {
+      indexAxis: 'y',
+      plugins: { legend: { display: false } },
+      scales: { x: { beginAtZero: true, ticks: { precision: 0 } } },
+    },
+  });
+})();
+{% endif %}
+</script>
+{% endif %}
+{% endblock %}
