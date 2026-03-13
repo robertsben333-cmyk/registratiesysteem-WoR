@@ -8,6 +8,8 @@ from .models import (
     get_all_for_export, SW_QUESTIONS, calc_sw_scores,
 )
 from . import get_coach_settings, save_coach_settings, GEMEENTEN
+from .updates import get_update_status
+from .version import APP_VERSION
 
 bp = Blueprint('main', __name__)
 
@@ -20,7 +22,7 @@ def load_coach():
 
 @bp.context_processor
 def inject_coach():
-    return {'coach': g.coach}
+    return {'coach': g.coach, 'app_version': APP_VERSION}
 
 
 # ── Coach setup / wijzigen ────────────────────────────────────────────────────
@@ -58,6 +60,7 @@ def index():
     if not g.coach.get('naam'):
         return redirect(url_for('main.coach_setup'))
     clients = get_all_clients()
+    update_status = get_update_status()
     status = {
         c['id']: {
             1: get_vl1(c['id']) is not None,
@@ -71,7 +74,8 @@ def index():
     return render_template('index.html',
         active_clients=active_clients,
         done_clients=done_clients,
-        status=status)
+        status=status,
+        update_status=update_status)
 
 
 # ── Client toevoegen / verwijderen ────────────────────────────────────────────

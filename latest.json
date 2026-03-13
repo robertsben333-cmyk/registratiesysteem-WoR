@@ -1,0 +1,11 @@
+{
+  "version": "0.1.0",
+  "min_supported_version": "0.1.0",
+  "published_at": "2026-03-13",
+  "notes": [
+    "Eerste release met centrale updatebasis."
+  ],
+  "windows": {
+    "url": "https://github.com/robertsben333-cmyk/registratiesysteem-WoR/releases/latest"
+  }
+}

@@ -13,7 +13,10 @@
   <div class="container d-flex justify-content-between align-items-center">
     <a class="navbar-brand" href="{{ url_for('main.index') }}">
       <span class="accent">●</span> Welzijn op Recept
-      <small class="fw-normal ms-2 opacity-75">Registratie</small>
+      <small class="fw-normal ms-2 opacity-75">
+        Registratie
+        <span class="opacity-50 ms-2">v{{ app_version }}</span>
+      </small>
     </a>
     {% if coach.naam %}
     <div class="d-flex align-items-center gap-2">

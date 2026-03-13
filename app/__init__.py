@@ -2,23 +2,67 @@ import sys
 import os
 import json
 import random
+import shutil
 import string
 import sqlite3
 from flask import Flask
+from .version import APP_NAME, APP_VERSION, UPDATE_MANIFEST_URL
 
-# Resolve base directory: next to .exe when packaged, otherwise project root
+# Resolve install directory: next to .exe when packaged, otherwise project root
 if getattr(sys, 'frozen', False):
-    BASE_DIR = os.path.dirname(sys.executable)
+    INSTALL_DIR = os.path.dirname(sys.executable)
 else:
-    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    INSTALL_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-COACH_SETTINGS_PATH = os.path.join(BASE_DIR, 'coach_settings.json')
+
+def _get_storage_dir():
+    """Store user data outside the install folder for packaged builds."""
+    if getattr(sys, 'frozen', False):
+        appdata_root = os.environ.get('APPDATA')
+        if appdata_root:
+            return os.path.join(appdata_root, APP_NAME)
+        return os.path.join(os.path.expanduser('~'), APP_NAME)
+    return INSTALL_DIR
+
+
+STORAGE_DIR = _get_storage_dir()
+COACH_SETTINGS_PATH = os.path.join(STORAGE_DIR, 'coach_settings.json')
+DB_PATH = os.path.join(STORAGE_DIR, 'wor_data.db')
+LOCAL_UPDATE_MANIFEST_PATH = os.path.join(INSTALL_DIR, 'latest.json')
+if getattr(sys, 'frozen', False):
+    BUNDLED_UPDATE_MANIFEST_PATH = os.path.join(sys._MEIPASS, 'latest.json')
+else:
+    BUNDLED_UPDATE_MANIFEST_PATH = LOCAL_UPDATE_MANIFEST_PATH
 
 GEMEENTEN = [
     'Beesel', 'Bergen', 'Echt-Susteren', 'Gennep', 'Horst aan de Maas',
     'Leudal', 'Maasgouw', 'Nederweert', 'Roerdalen', 'Roermond',
     'Venlo', 'Venray', 'Weert',
 ]
+
+
+def _ensure_storage_dir():
+    os.makedirs(STORAGE_DIR, exist_ok=True)
+
+
+def _migrate_legacy_file(filename):
+    legacy_path = os.path.join(INSTALL_DIR, filename)
+    target_path = os.path.join(STORAGE_DIR, filename)
+    if legacy_path == target_path:
+        return
+    if os.path.exists(target_path) or not os.path.exists(legacy_path):
+        return
+    try:
+        shutil.copy2(legacy_path, target_path)
+    except OSError:
+        pass
+
+
+def prepare_storage():
+    _ensure_storage_dir()
+    if getattr(sys, 'frozen', False):
+        for filename in ('coach_settings.json', 'wor_data.db'):
+            _migrate_legacy_file(filename)
 
 
 def get_coach_settings():
@@ -49,8 +93,6 @@ def save_coach_settings(naam, gemeente, uren_per_week):
             'gemeente': gemeente,
             'uren_per_week': uren_per_week,
         }, f, ensure_ascii=False)
-
-DB_PATH = os.path.join(BASE_DIR, 'wor_data.db')
 
 
 def get_db():
@@ -139,7 +181,17 @@ def create_app():
 
     app = Flask(__name__, template_folder=template_folder, static_folder=static_folder)
     app.secret_key = 'wor-registratie-2026'
+    app.config['APP_VERSION'] = APP_VERSION
+    app.config['APP_STORAGE_DIR'] = STORAGE_DIR
+    app.config['UPDATE_MANIFEST_URL'] = os.environ.get(
+        'WOR_UPDATE_MANIFEST_URL',
+        UPDATE_MANIFEST_URL
+    ).strip()
+    app.config['UPDATE_MANIFEST_PATH'] = LOCAL_UPDATE_MANIFEST_PATH
+    app.config['UPDATE_MANIFEST_BUNDLED_PATH'] = BUNDLED_UPDATE_MANIFEST_PATH
+    app.config['UPDATE_CHECK_INTERVAL'] = 6 * 60 * 60
 
+    prepare_storage()
     init_db()
 
     from .routes import bp

@@ -1,5 +1,6 @@
 # Database
 wor_data.db
+coach_settings.json
 
 # Python
 __pycache__/
@@ -15,8 +16,6 @@ venv/
 env/
 
 # PyInstaller
-*.spec
-
 # Claude
 .claude/
 

@@ -3,6 +3,36 @@
 {% block title %}Cliëntenoverzicht — WoR{% endblock %}
 
 {% block content %}
+{% if update_status.available or update_status.required %}
+<div class="alert alert-{{ 'danger' if update_status.required else 'warning' }} d-flex justify-content-between align-items-start gap-3 rounded-3">
+  <div>
+    <div class="fw-semibold">
+      {% if update_status.required %}
+      Update vereist
+      {% else %}
+      Nieuwe versie beschikbaar
+      {% endif %}
+    </div>
+    <div class="small">
+      U gebruikt versie {{ update_status.current_version }}.
+      Versie {{ update_status.latest_version }} is beschikbaar.
+    </div>
+    {% if update_status.notes %}
+    <ul class="mb-0 mt-2 small ps-3">
+      {% for note in update_status.notes %}
+      <li>{{ note }}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </div>
+  {% if update_status.download_url %}
+  <a href="{{ update_status.download_url }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-dark text-nowrap">
+    Download update
+  </a>
+  {% endif %}
+</div>
+{% endif %}
+
 <div class="page-header mb-4 d-flex justify-content-between align-items-center">
   <div>
     <h5>Cliënten</h5>
