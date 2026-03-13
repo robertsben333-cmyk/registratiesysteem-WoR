@@ -6,6 +6,7 @@ from .models import (
     get_clients_by_first_name,
     get_vl1, save_vl1, get_vl2, save_vl2, get_vl3, save_vl3,
     get_all_for_export, SW_QUESTIONS, calc_sw_scores,
+    get_dashboard_data,
 )
 from . import get_coach_settings, save_coach_settings, GEMEENTEN
 from .updates import get_update_status
@@ -76,6 +77,19 @@ def index():
         done_clients=done_clients,
         status=status,
         update_status=update_status)
+
+
+# ── Dashboard ─────────────────────────────────────────────────────────────────
+
+@bp.route('/dashboard')
+def dashboard():
+    if not g.coach.get('naam'):
+        return redirect(url_for('main.coach_setup'))
+    periode = request.args.get('periode', 'alles')
+    if periode not in ('kwartaal', 'jaar', 'alles'):
+        periode = 'alles'
+    data = get_dashboard_data(periode)
+    return render_template('dashboard.html', periode=periode, **data)
 
 
 # ── Client toevoegen / verwijderen ────────────────────────────────────────────
