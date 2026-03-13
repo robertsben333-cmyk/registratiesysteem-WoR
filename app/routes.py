@@ -364,7 +364,22 @@ def vragenlijst_3_view(client_id):
 def export_excel():
     from openpyxl import Workbook
     from openpyxl.styles import Font, PatternFill, Alignment
+    import hashlib
     rows, sw_vl1, sw_vl3 = get_all_for_export()
+
+    # Build deterministic anonymous IDs: 3 uppercase letters + 3 digits per client
+    anon_map = {}
+    for row in rows:
+        cid = row['id']
+        h = hashlib.sha256(f"wor-anon-{cid}".encode()).hexdigest()
+        letters = ''.join(chr(65 + int(h[i], 16) % 26) for i in range(3))
+        digits = ''.join(str(int(h[i + 3], 16) % 10) for i in range(3))
+        anon_map[cid] = letters + digits
+
+    # Coach info for export
+    coach = get_coach_settings()
+    coach_id = coach.get('coach_id', '')
+    gemeente = coach.get('gemeente', '')
 
     wb = Workbook()
 
@@ -375,7 +390,7 @@ def export_excel():
     hdr_fill = PatternFill("solid", fgColor="D9D9D9")
 
     headers = [
-        'Voornaam', 'Aangemaakt op',
+        'Deelnemer ID', 'Welzijnscoach ID', 'Gemeente', 'Aangemaakt op',
         # VL1
         'VL1: Verwijzer', 'VL1: Geslacht', 'VL1: Leeftijdscategorie',
         'VL1: Woonsituatie', 'VL1: Werkstatus', 'VL1: Eerder hulp',
@@ -398,7 +413,8 @@ def export_excel():
         cell.fill = hdr_fill
 
     for row in rows:
-        ws1.append([row[i] for i in range(1, len(headers) + 1)])
+        ws1.append([anon_map[row['id']], coach_id, gemeente, row['aangemaakt_op']]
+                   + [row[i] for i in range(3, len(row))])
 
     for col in ws1.columns:
         w = max((len(str(c.value or '')) for c in col), default=10)
@@ -406,7 +422,7 @@ def export_excel():
 
     # ── Sheet 2: Spinnenweb VL1 ──────────────────────────────────────────────
     ws2 = wb.create_sheet("Spinnenweb Intake (VL1)")
-    sw_headers = ['Voornaam'] + [f"Q{n}: {txt}" for dim, qs in SW_QUESTIONS.items() for (n, txt) in qs]
+    sw_headers = ['Deelnemer ID'] + [f"Q{n}: {txt}" for dim, qs in SW_QUESTIONS.items() for (n, txt) in qs]
     sw_headers += ['Gem. Lichaamsfuncties', 'Gem. Mentaal welbevinden', 'Gem. Zingeving',
                    'Gem. Kwaliteit van leven', 'Gem. Meedoen', 'Gem. Dagelijks functioneren']
     ws2.append(sw_headers)
@@ -421,9 +437,9 @@ def export_excel():
             scores = calc_sw_scores(sw)
             q_vals = [sw[f'sw_q{i}'] for i in range(1, 45)]
             dim_avgs = [scores.get(d) for d in SW_QUESTIONS]
-            ws2.append([row['voornaam']] + q_vals + dim_avgs)
+            ws2.append([anon_map[cid]] + q_vals + dim_avgs)
         else:
-            ws2.append([row['voornaam']] + [''] * 50)
+            ws2.append([anon_map[cid]] + [''] * 50)
 
     for col in ws2.columns:
         ws2.column_dimensions[col[0].column_letter].width = 12
@@ -443,9 +459,9 @@ def export_excel():
             scores = calc_sw_scores(sw)
             q_vals = [sw[f'sw_q{i}'] for i in range(1, 45)]
             dim_avgs = [scores.get(d) for d in SW_QUESTIONS]
-            ws3.append([row['voornaam']] + q_vals + dim_avgs)
+            ws3.append([anon_map[cid]] + q_vals + dim_avgs)
         else:
-            ws3.append([row['voornaam']] + [''] * 50)
+            ws3.append([anon_map[cid]] + [''] * 50)
 
     for col in ws3.columns:
         ws3.column_dimensions[col[0].column_letter].width = 12
@@ -464,4 +480,4 @@ def export_excel():
 
 @bp.app_errorhandler(404)
 def page_not_found(e):
-    return render_template('404.html'), 404
+    return render_template('404.html', coach=get_coach_settings(), app_version=APP_VERSION), 404
