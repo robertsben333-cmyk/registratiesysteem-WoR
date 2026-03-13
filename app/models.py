@@ -1,4 +1,30 @@
+import calendar
+from datetime import date
+
 from . import get_db
+
+# ── Dashboard constants ───────────────────────────────────────────────────────
+
+SIGNALERING_ACHTERUITGANG_DREMPEL = -1.0
+
+
+def get_periode_range(periode):
+    """Return (start_date, end_date) as date objects, or (None, None) for 'alles'.
+
+    periode: 'kwartaal' | 'jaar' | 'alles'
+    """
+    today = date.today()
+    if periode == 'kwartaal':
+        q = (today.month - 1) // 3          # 0-indexed quarter
+        start_month = q * 3 + 1
+        end_month = start_month + 2
+        start = date(today.year, start_month, 1)
+        end = date(today.year, end_month, calendar.monthrange(today.year, end_month)[1])
+        return start, end
+    if periode == 'jaar':
+        return date(today.year, 1, 1), date(today.year, 12, 31)
+    return None, None                        # 'alles'
+
 
 # ── Spinnenweb helpers ────────────────────────────────────────────────────────
 
