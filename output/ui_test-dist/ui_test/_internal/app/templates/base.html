@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}WoR Registratie{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap.min.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="app-shell">
+  <nav class="navbar navbar-expand-lg mb-4">
+    <div class="container d-flex justify-content-between align-items-center">
+      <a class="navbar-brand" href="{{ url_for('main.index') }}">
+        <span class="navbar-brand__mark">WoR</span>
+        <span>
+          Welzijn op Recept
+          <small>
+            Registratie <span class="navbar-version">v{{ app_version }}</span>
+          </small>
+        </span>
+      </a>
+      {% if coach.naam %}
+      <div class="navbar-meta">
+        {% if request.endpoint == 'main.dashboard' %}
+        <a href="{{ url_for('main.index') }}" class="btn btn-sm btn-navbar-ghost">Cliënten</a>
+        {% else %}
+        <a href="{{ url_for('main.dashboard') }}" class="btn btn-sm btn-navbar-ghost">Dashboard</a>
+        {% endif %}
+        <div class="coach-chip">
+          <span class="coach-chip__name">{{ coach.naam }}</span>
+          <span class="coach-chip__meta">{{ coach.gemeente }}</span>
+          <span class="coach-id">#{{ coach.coach_id }}</span>
+        </div>
+        <a href="{{ url_for('main.coach_setup') }}" class="btn btn-sm btn-navbar-ghost">Instellingen</a>
+      </div>
+      {% else %}
+      <a href="{{ url_for('main.coach_setup') }}" class="btn btn-sm btn-navbar-ghost">Coach instellen</a>
+      {% endif %}
+    </div>
+  </nav>
+
+  <div class="container pb-5">
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show rounded-3" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  {% block content %}{% endblock %}
+
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='bootstrap.bundle.min.js') }}"></script>
+{% block scripts %}{% endblock %}
+<script>
+  (function () {
+    function ping() { fetch('/ping', { method: 'POST' }).catch(function(){}); }
+    ping();
+    setInterval(ping, 5000);
+  })();
+</script>
+</body>
+</html>

@@ -32,7 +32,7 @@ In de verpakte Windows-app krijgt de gebruiker bij een nieuwe versie een melding
 Gebruik bij voorkeur een zip-bestand met de nieuwe `WoR Registratie.exe`, bijvoorbeeld:
 
 `WoR-Registratie-0.1.0-windows.zip`
-
+t
 Als je een versie-specifieke downloadlink wilt gebruiken in `latest.json`, gebruik dan dit patroon:
 
 `https://github.com/robertsben333-cmyk/registratiesysteem-WoR/releases/download/v0.1.0/WoR-Registratie-0.1.0-windows.zip`
