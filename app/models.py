@@ -453,9 +453,10 @@ def get_dashboard_data(periode='alles', status='alle', radar_group='alle', radar
     }
 
     # ── 4. Spinnenweb ────────────────────────────────────────────────
+    # geslacht included so the radar_group='geslacht' filter can access it
     sw_cols_str = ', '.join(SW_COLS)
     vl1_sw = {r['client_id']: r for r in conn.execute(
-        f"SELECT client_id, {sw_cols_str} FROM vragenlijst_1 WHERE client_id IN ({ph})", client_ids
+        f"SELECT client_id, geslacht, {sw_cols_str} FROM vragenlijst_1 WHERE client_id IN ({ph})", client_ids
     ).fetchall()}
     vl3_sw = {r['client_id']: r for r in conn.execute(
         f"SELECT client_id, {sw_cols_str} FROM vragenlijst_3 WHERE client_id IN ({ph})", client_ids
