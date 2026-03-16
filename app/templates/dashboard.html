@@ -3,8 +3,43 @@
 
 {% block content %}
 <div class="dashboard-shell">
+  {% set focus = namespace(label='Alle dossiers') %}
+  {% for option in filters.status_options %}
+    {% if option.value == filters.status %}
+      {% set focus.label = option.label %}
+    {% endif %}
+  {% endfor %}
+  <section class="dashboard-hero mb-4">
+    <div class="dashboard-hero__content">
+      <div class="dashboard-hero__copy">
+        <span class="eyebrow">Dashboard</span>
+        <h1 class="dashboard-title">Inzicht in caseload, voortgang en effect.</h1>
+        <p class="dashboard-subtitle">
+          Een compact overzicht van wat nu loopt, waar opvolging wenselijk is en welke ontwikkeling zichtbaar wordt in de trajecten.
+        </p>
+      </div>
+      <div class="dashboard-hero__meta">
+        <article class="hero-stat">
+          <span class="hero-stat__label">Totaal dossiers</span>
+          <span class="hero-stat__value">{{ kpis.totaal }}</span>
+          <span class="hero-stat__meta">Binnen de huidige selectie</span>
+        </article>
+        <article class="hero-stat">
+          <span class="hero-stat__label">Actuele focus</span>
+          <span class="hero-stat__value hero-stat__value--small">{{ focus.label }}</span>
+          <span class="hero-stat__meta">{{ periode|capitalize }}</span>
+        </article>
+        <article class="hero-stat">
+          <span class="hero-stat__label">Aandacht nodig</span>
+          <span class="hero-stat__value">{{ signalen|length if signalen is defined else 0 }}</span>
+          <span class="hero-stat__meta">Dossiers met een signaal</span>
+        </article>
+      </div>
+    </div>
+  </section>
+
   <div class="dashboard-toolbar sticky-top mb-4">
-    <a href="{{ url_for('main.index') }}" class="btn btn-primary dashboard-back-btn">Terug naar cliënten</a>
+    <a href="{{ url_for('main.index') }}" class="btn btn-primary dashboard-back-btn">Terug naar deelnemers</a>
     <div class="toolbar-group">
       <span class="toolbar-label">Periode</span>
       {% for label, value in [('Kwartaal', 'kwartaal'), ('Jaar', 'jaar'), ('Alles', 'alles')] %}
@@ -37,18 +72,19 @@
   {% else %}
     <div class="row g-3 mb-4">
       {% set kpi_items = [
-        ('Totaal dossiers', kpis.totaal),
-        ('Actief', kpis.actief),
-        ('Doorverwezen naar activiteit', kpis.naar_activiteit),
-        ('Afgerond', kpis.afgerond),
-        ('Uitgevallen', kpis.uitgevallen),
+        ('Totaal dossiers', kpis.totaal, 'Alle dossiers binnen de selectie'),
+        ('Actief', kpis.actief, 'Trajecten die nog lopen'),
+        ('Start activiteit', kpis.naar_activiteit, 'Doorverwezen en nog in uitvoering'),
+        ('Afgerond', kpis.afgerond, 'Met intake, uitstroom en opvolging'),
+        ('Uitgevallen', kpis.uitgevallen, 'Voortijdig beëindigd'),
       ] %}
-      {% for label, value in kpi_items %}
+      {% for label, value, meta in kpi_items %}
         <div class="col-12 col-sm-6 col-xl">
           <article class="card kpi-card h-100 border-0">
             <div class="card-body">
               <span class="kpi-card__label">{{ label }}</span>
               <div class="kpi-card__value">{{ value }}</div>
+              <div class="kpi-card__meta">{{ meta }}</div>
             </div>
           </article>
         </div>
@@ -73,20 +109,23 @@
           <div class="col-12 col-md-6 col-xl-4">
             <div class="card dashboard-card h-100">
               <div class="card-header dashboard-card__header">
-                <h2 class="dashboard-card__title">Coachcapaciteit</h2>
+                <div>
+                  <h2 class="dashboard-card__title">Coachcapaciteit</h2>
+                  <p class="dashboard-card__sub mb-0">Beschikbare tijd en dossiers die extra aandacht vragen.</p>
+                </div>
               </div>
               <div class="card-body">
                 <div class="metric-stack">
                   <div class="metric-stack__item">
-                    <span class="metric-stack__label">Beschikbare uren per week</span>
+                    <span class="metric-stack__label">Beschikbaar per week</span>
                     <strong>{{ coach_overview.uren_per_week if coach_overview.uren_per_week is not none else '—' }}</strong>
                   </div>
                   <div class="metric-stack__item">
-                    <span class="metric-stack__label">Beschikbare uren per actief dossier</span>
+                    <span class="metric-stack__label">Per actief dossier</span>
                     <strong>{{ coach_overview.uren_per_dossier if coach_overview.uren_per_dossier is not none else '—' }}</strong>
                   </div>
                   <div class="metric-stack__item">
-                    <span class="metric-stack__label">Openstaande aandachtspunten</span>
+                    <span class="metric-stack__label">Openstaande signalen</span>
                     <strong>{{ coach_overview.signalen_totaal }}</strong>
                   </div>
                 </div>
@@ -97,11 +136,14 @@
           <div class="col-12 col-md-6 col-xl-4">
             <div class="card dashboard-card h-100">
               <div class="card-header dashboard-card__header">
-                <h2 class="dashboard-card__title">Gemiddelde contacturen</h2>
+                <div>
+                  <h2 class="dashboard-card__title">Contacturen</h2>
+                  <p class="dashboard-card__sub mb-0">Gemiddelde inzet binnen afgeronde trajecten.</p>
+                </div>
               </div>
               <div class="card-body">
                 {% if contactmomenten.afgerond_n == 0 %}
-                  <div class="alert alert-warning mb-0">Wordt ingevuld zodra er minimaal één volledig afgerond traject is.</div>
+                  <div class="alert alert-warning mb-0">Beschikbaar zodra ten minste één traject volledig is afgerond.</div>
                 {% else %}
                   <div class="contact-hour-grid">
                     <div class="contact-hour">
@@ -121,7 +163,10 @@
           <div class="col-12 col-xl-4">
             <div class="card dashboard-card h-100">
               <div class="card-header dashboard-card__header">
-                <h2 class="dashboard-card__title">Ondersteuningsbehoefte</h2>
+                <div>
+                  <h2 class="dashboard-card__title">Ondersteuningsbehoefte</h2>
+                  <p class="dashboard-card__sub mb-0">Wat deelnemers na drie maanden nog aangeven nodig te hebben.</p>
+                </div>
               </div>
               <div class="card-body">
                 {% if ondersteuning %}
@@ -137,7 +182,7 @@
                     {% endfor %}
                   </div>
                 {% else %}
-                  <p class="text-muted mb-0">Nog geen opvolgingsdata beschikbaar.</p>
+                  <p class="text-muted mb-0">Nog geen gegevens uit de opvolging beschikbaar.</p>
                 {% endif %}
               </div>
             </div>
@@ -146,12 +191,15 @@
           <div class="col-12">
             <div class="card dashboard-card h-100">
               <div class="card-header dashboard-card__header">
-                <h2 class="dashboard-card__title">Opvolging mogelijk</h2>
-                <span class="badge text-bg-light">{{ signalen|length }} signalen</span>
+                <div>
+                  <h2 class="dashboard-card__title">Aandacht en opvolging</h2>
+                  <p class="dashboard-card__sub mb-0">Dossiers die mogelijk een vervolgstap of check-in vragen.</p>
+                </div>
+                <span class="badge text-bg-light">{{ signalen|length }} signaal{{ 'en' if signalen|length != 1 else '' }}</span>
               </div>
               <div class="card-body">
                 {% if not signalen %}
-                  <div class="alert alert-success mb-0">Alle deelnemers lijken op schema te lopen.</div>
+                  <div class="alert alert-success mb-0">Er zijn nu geen dossiers met een opvallend signaal.</div>
                 {% else %}
                   <div class="table-responsive">
                     <table class="table align-middle mb-0 dashboard-table">
@@ -175,7 +223,7 @@
                             <td class="fw-semibold">{{ signaal.naam }}</td>
                             <td><span class="badge text-bg-{{ badge }}">{{ signaal.reden }}</span></td>
                             <td class="text-end">
-                              <a href="{{ signaal.link }}" class="btn btn-sm btn-outline-primary">Bekijk dossier</a>
+                              <a href="{{ signaal.link }}" class="btn btn-sm btn-outline-primary">Open dossier</a>
                             </td>
                           </tr>
                         {% endfor %}
@@ -194,13 +242,16 @@
           <div class="col-12 col-xl-8">
             <div class="card dashboard-card h-100">
               <div class="card-header dashboard-card__header dashboard-card__header--stack">
-                <h2 class="dashboard-card__title">Verbetering welbevinden</h2>
+                <div>
+                  <h2 class="dashboard-card__title">Ontwikkeling in welbevinden</h2>
+                  <p class="dashboard-card__sub mb-0">Vergelijk intake en opvolging op de zes Positieve Gezondheid-dimensies.</p>
+                </div>
                 <form method="get" class="radar-filter-form">
                   <input type="hidden" name="periode" value="{{ periode }}">
                   <input type="hidden" name="status" value="{{ filters.status }}">
                   <input type="hidden" name="tab" value="impact">
                   <div>
-                    <label class="form-label small mb-1">Filtergroep</label>
+                    <label class="form-label small mb-1">Selectie</label>
                     <select class="form-select form-select-sm js-auto-submit" name="radar_group">
                       {% for option in filters.radar_group_options %}
                         <option value="{{ option.value }}" {{ 'selected' if filters.radar_group == option.value }}>{{ option.label }}</option>
@@ -208,7 +259,7 @@
                     </select>
                   </div>
                   <div>
-                    <label class="form-label small mb-1">Waarde</label>
+                    <label class="form-label small mb-1">Uitsnede</label>
                     <select class="form-select form-select-sm js-auto-submit" name="radar_value">
                       {% for option in filters.radar_value_options %}
                         <option value="{{ option.value }}" {{ 'selected' if filters.radar_value == option.value }}>
@@ -221,11 +272,11 @@
               </div>
               <div class="card-body">
                 {% if sw_n == 0 %}
-                  <p class="text-muted mb-0">Voor deze selectie zijn nog geen deelnemers met zowel intake als opvolging beschikbaar.</p>
+                  <p class="text-muted mb-0">Voor deze selectie zijn nog geen trajecten met zowel intake als opvolging beschikbaar.</p>
                 {% else %}
                   <div class="impact-headline">
                     <strong>{{ filters.radar_scope_label }}</strong>
-                    <strong>{{ sw_n }} deelnemer{{ 's' if sw_n != 1 else '' }}</strong>
+                    <strong>{{ sw_n }} traject{{ 'en' if sw_n != 1 else '' }}</strong>
                   </div>
                   <div class="chart-shell chart-shell--radar">
                     <canvas id="dashboardRadar" height="360"></canvas>
@@ -265,23 +316,26 @@
               <div class="col-12">
                 <div class="card dashboard-card h-100">
                   <div class="card-header dashboard-card__header">
-                    <h2 class="dashboard-card__title">Impactsamenvatting</h2>
-                  </div>
-                  <div class="card-body">
-                    <div class="metric-stack">
-                      <div class="metric-stack__item">
-                        <span class="metric-stack__label">Gem. tevredenheid</span>
+                <div>
+                  <h2 class="dashboard-card__title">Kern van de impact</h2>
+                  <p class="dashboard-card__sub mb-0">Belangrijkste uitkomsten uit opvolging en tevredenheid.</p>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="metric-stack">
+                  <div class="metric-stack__item">
+                        <span class="metric-stack__label">Gemiddelde tevredenheid</span>
                         <strong>{{ kpis.gem_tevredenheid if kpis.gem_tevredenheid is not none else '—' }}</strong>
                       </div>
                       <div class="metric-stack__item">
-                        <span class="metric-stack__label">Sterkste groei</span>
+                        <span class="metric-stack__label">Sterkste positieve beweging</span>
                         <strong>{{ highlights.sterkste_dimensie if highlights.sterkste_dimensie else '—' }}</strong>
                         <span class="metric-stack__meta">
-                          {% if highlights.sterkste_delta is not none %}{{ '%+.1f' % highlights.sterkste_delta }}{% else %}Geen data{% endif %}
+                          {% if highlights.sterkste_delta is not none %}{{ '%+.1f' % highlights.sterkste_delta }}{% else %}Nog niet beschikbaar{% endif %}
                         </span>
                       </div>
                       <div class="metric-stack__item">
-                        <span class="metric-stack__label">Gem. huisartsbezoeken</span>
+                        <span class="metric-stack__label">Gemiddelde huisartsbezoeken</span>
                         <strong>
                           {% if huisartsimpact.gem_vl1 is not none and huisartsimpact.gem_vl3 is not none %}
                             {{ huisartsimpact.gem_vl1 }} → {{ huisartsimpact.gem_vl3 }}
@@ -290,7 +344,7 @@
                           {% endif %}
                         </strong>
                         <span class="metric-stack__meta">
-                          {% if huisartsimpact.delta is not none %}Delta {{ '%+.1f' % huisartsimpact.delta }} in {{ huisartsimpact.n }} dossiers{% endif %}
+                          {% if huisartsimpact.delta is not none %}Gemiddeld {{ '%+.1f' % huisartsimpact.delta }} over {{ huisartsimpact.n }} dossier{{ 's' if huisartsimpact.n != 1 else '' }}{% endif %}
                         </span>
                       </div>
                     </div>
@@ -301,7 +355,10 @@
               <div class="col-12">
                 <div class="card dashboard-card h-100">
                   <div class="card-header dashboard-card__header">
-                    <h2 class="dashboard-card__title">Continuering na 3 maanden</h2>
+                    <div>
+                      <h2 class="dashboard-card__title">Situatie na 3 maanden</h2>
+                      <p class="dashboard-card__sub mb-0">Of deelnemers actief blijven, elders doorgaan of stoppen.</p>
+                    </div>
                   </div>
                   <div class="card-body">
                     {% if continuering %}
@@ -317,7 +374,7 @@
                         {% endfor %}
                       </div>
                     {% else %}
-                      <p class="text-muted mb-0">Nog geen opvolgingsdata beschikbaar.</p>
+                      <p class="text-muted mb-0">Nog geen gegevens uit de opvolging beschikbaar.</p>
                     {% endif %}
                   </div>
                 </div>
@@ -332,7 +389,10 @@
           <div class="col-12 col-xl-6">
             <div class="card dashboard-card h-100">
               <div class="card-header dashboard-card__header">
-                <h2 class="dashboard-card__title">Verwijzers</h2>
+                <div>
+                  <h2 class="dashboard-card__title">Verwijzers</h2>
+                  <p class="dashboard-card__sub mb-0">Waar nieuwe aanmeldingen vandaan komen.</p>
+                </div>
               </div>
               <div class="card-body">
                 {% if verwijzers %}
@@ -350,7 +410,7 @@
                     </div>
                   {% endif %}
                 {% else %}
-                  <p class="text-muted mb-0">Nog geen verwijzersdata beschikbaar.</p>
+                  <p class="text-muted mb-0">Nog geen verwijzersgegevens beschikbaar.</p>
                 {% endif %}
               </div>
             </div>
@@ -359,7 +419,10 @@
           <div class="col-12 col-xl-6">
             <div class="card dashboard-card h-100">
               <div class="card-header dashboard-card__header">
-                <h2 class="dashboard-card__title">Aanmeldredenen</h2>
+                <div>
+                  <h2 class="dashboard-card__title">Aanmeldredenen</h2>
+                  <p class="dashboard-card__sub mb-0">De meest voorkomende redenen om een traject te starten.</p>
+                </div>
               </div>
               <div class="card-body">
                 {% if aanmeldredenen %}
@@ -367,7 +430,7 @@
                     <canvas id="aanmeldredenenChart" height="230"></canvas>
                   </div>
                 {% else %}
-                  <p class="text-muted mb-0">Nog geen uitstroom- of procesdata beschikbaar.</p>
+                  <p class="text-muted mb-0">Nog geen procesgegevens beschikbaar.</p>
                 {% endif %}
               </div>
             </div>
@@ -378,19 +441,22 @@
           <div class="col-12 col-md-6 col-xl-4">
             <div class="card dashboard-card h-100">
               <div class="card-header dashboard-card__header">
-                <h2 class="dashboard-card__title">Doorstroom</h2>
+                <div>
+                  <h2 class="dashboard-card__title">Doorlooptijd</h2>
+                  <p class="dashboard-card__sub mb-0">Gemiddelde tijd tussen verwijzing, intake en start.</p>
+                </div>
               </div>
               <div class="card-body">
                 <div class="metric-stack">
                   <div class="metric-stack__item">
                     <span class="metric-stack__label">Verwijzing → intake</span>
                     <strong>{{ doorstroom.gem_verwijzing_intake if doorstroom.gem_verwijzing_intake is not none else '—' }} dagen</strong>
-                    <span class="metric-stack__meta">{{ doorstroom.n_verwijzing_intake }} dossiers</span>
+                    <span class="metric-stack__meta">{{ doorstroom.n_verwijzing_intake }} dossier{{ 's' if doorstroom.n_verwijzing_intake != 1 else '' }}</span>
                   </div>
                   <div class="metric-stack__item">
                     <span class="metric-stack__label">Intake → start activiteit</span>
                     <strong>{{ doorstroom.gem_intake_start if doorstroom.gem_intake_start is not none else '—' }} dagen</strong>
-                    <span class="metric-stack__meta">{{ doorstroom.n_intake_start }} dossiers</span>
+                    <span class="metric-stack__meta">{{ doorstroom.n_intake_start }} dossier{{ 's' if doorstroom.n_intake_start != 1 else '' }}</span>
                   </div>
                 </div>
               </div>
@@ -400,7 +466,10 @@
           <div class="col-12 col-md-6 col-xl-4">
             <div class="card dashboard-card h-100">
               <div class="card-header dashboard-card__header">
-                <h2 class="dashboard-card__title">Uitstroom en doorverwijzing</h2>
+                <div>
+                  <h2 class="dashboard-card__title">Uitstroom en doorverwijzing</h2>
+                  <p class="dashboard-card__sub mb-0">Waar trajecten eindigen en of verdere verwijzing plaatsvindt.</p>
+                </div>
               </div>
               <div class="card-body">
                 {% if uitstroom.bestemmingen %}
@@ -425,7 +494,10 @@
           <div class="col-12 col-xl-4">
             <div class="card dashboard-card h-100">
               <div class="card-header dashboard-card__header">
-                <h2 class="dashboard-card__title">Demografie</h2>
+                <div>
+                  <h2 class="dashboard-card__title">Demografie</h2>
+                  <p class="dashboard-card__sub mb-0">Verdeling naar geslacht en leeftijdscategorie.</p>
+                </div>
               </div>
               <div class="card-body">
                 {% if demografie.geslacht %}
@@ -459,16 +531,16 @@
 <script>
 (function() {
   const palette = {
-    primary: '#1E6F8E',
-    secondary: '#E8933A',
-    success: '#28A062',
-    danger: '#D94F4F',
-    info: '#2EA9D3',
-    slate: '#6B7E93',
-    sand: '#F3E7D6',
-    mint: '#D6F1E3',
-    rose: '#F7D8D8',
-    sky: '#D8ECF4'
+    primary: '#215A6D',
+    secondary: '#BF7A3F',
+    success: '#2D7F62',
+    danger: '#C65A54',
+    info: '#5D8F9E',
+    slate: '#61717A',
+    sand: '#EAD8C7',
+    mint: '#DCECE2',
+    rose: '#F0D5D2',
+    sky: '#D9E8EC'
   };
 
   function chartOrNull(id) {
@@ -532,16 +604,16 @@
         {
           label: 'Intake',
           data: {{ sw_vl1 | tojson }},
-          borderColor: 'rgba(30,111,142,0.75)',
-          backgroundColor: 'rgba(30,111,142,0.10)',
+          borderColor: 'rgba(33,90,109,0.75)',
+          backgroundColor: 'rgba(33,90,109,0.10)',
           borderDash: [6, 4],
           pointRadius: 3,
         },
         {
           label: 'Opvolging',
           data: {{ sw_vl3 | tojson }},
-          borderColor: 'rgba(40,160,98,0.95)',
-          backgroundColor: 'rgba(40,160,98,0.14)',
+          borderColor: 'rgba(45,127,98,0.95)',
+          backgroundColor: 'rgba(45,127,98,0.14)',
           pointRadius: 4,
         }
       ]
@@ -553,8 +625,8 @@
           min: 0,
           max: 10,
           ticks: { stepSize: 2, backdropColor: 'transparent' },
-          grid: { color: 'rgba(107,126,147,0.16)' },
-          pointLabels: { color: '#1E2D3D', font: { size: 12 } }
+          grid: { color: 'rgba(97,113,122,0.16)' },
+          pointLabels: { color: '#20313A', font: { size: 12 } }
         }
       },
       plugins: { legend: { position: 'bottom' } }
@@ -563,19 +635,19 @@
   {% endif %}
 
   {% if verwijzers %}
-  barChart('verwijzersChart', {{ verwijzers | map(attribute='naam') | list | tojson }}, {{ verwijzers | map(attribute='count') | list | tojson }}, 'rgba(232,147,58,0.75)');
+  barChart('verwijzersChart', {{ verwijzers | map(attribute='naam') | list | tojson }}, {{ verwijzers | map(attribute='count') | list | tojson }}, 'rgba(191,122,63,0.78)');
   {% endif %}
   {% if aanmeldredenen %}
-  barChart('aanmeldredenenChart', {{ aanmeldredenen | map(attribute='label') | list | tojson }}, {{ aanmeldredenen | map(attribute='count') | list | tojson }}, 'rgba(30,111,142,0.75)');
+  barChart('aanmeldredenenChart', {{ aanmeldredenen | map(attribute='label') | list | tojson }}, {{ aanmeldredenen | map(attribute='count') | list | tojson }}, 'rgba(33,90,109,0.78)');
   {% endif %}
   {% if uitstroom.bestemmingen %}
-  barChart('uitstroomChart', {{ uitstroom.bestemmingen | map(attribute='label') | list | tojson }}, {{ uitstroom.bestemmingen | map(attribute='count') | list | tojson }}, 'rgba(40,160,98,0.75)');
+  barChart('uitstroomChart', {{ uitstroom.bestemmingen | map(attribute='label') | list | tojson }}, {{ uitstroom.bestemmingen | map(attribute='count') | list | tojson }}, 'rgba(45,127,98,0.78)');
   {% endif %}
   {% if demografie.geslacht %}
-  barChart('geslachtChart', {{ demografie.geslacht | map(attribute='label') | list | tojson }}, {{ demografie.geslacht | map(attribute='count') | list | tojson }}, 'rgba(46,169,211,0.75)');
+  barChart('geslachtChart', {{ demografie.geslacht | map(attribute='label') | list | tojson }}, {{ demografie.geslacht | map(attribute='count') | list | tojson }}, 'rgba(93,143,158,0.78)');
   {% endif %}
   {% if demografie.leeftijd %}
-  barChart('leeftijdChart', {{ demografie.leeftijd | map(attribute='label') | list | tojson }}, {{ demografie.leeftijd | map(attribute='count') | list | tojson }}, 'rgba(107,126,147,0.75)');
+  barChart('leeftijdChart', {{ demografie.leeftijd | map(attribute='label') | list | tojson }}, {{ demografie.leeftijd | map(attribute='count') | list | tojson }}, 'rgba(97,113,122,0.78)');
   {% endif %}
   {% if ondersteuning %}
   donutChart('ondersteuningChart', {{ ondersteuning | map(attribute='label') | list | tojson }}, {{ ondersteuning | map(attribute='count') | list | tojson }}, [palette.primary, palette.secondary, palette.success, palette.info]);

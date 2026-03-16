@@ -1,16 +1,15 @@
 {
-  "version": "1.3.1",
+  "version": "1.3.2",
   "min_supported_version": "0.1.0",
-  "published_at": "2026-03-13",
+  "published_at": "2026-03-16",
   "notes": [
-    "Dashboard v1.3.1 vereenvoudigd met duidelijke terugknop naar cliënten.",
-    "KPI's opgeschoond en uitgebreid met doorverwezen naar activiteit.",
-    "Caseload aangepast: coachcapaciteit per dossier en contacturen alleen voor afgeronde trajecten.",
-    "Impactfiltering beperkt tot geslacht, hoofdreden aanmelding en continuering.",
-    "App sluit automatisch af als de browser wordt gesloten.",
-    "In-app update melding en installatie voor Windows."
+    "Home en dashboard vernieuwd met een rustiger en professioneler hoofdthema.",
+    "Terminologie in de hoofdapp aangescherpt van clienten naar deelnemers.",
+    "Dashboardwidgets compacter gemaakt en teksten verduidelijkt voor sneller overzicht.",
+    "Navigatie en overzichten consistenter gemaakt tussen deelnemerslijst en dashboard.",
+    "In-app update blijft beschikbaar voor de Windows-build."
   ],
   "windows": {
-    "url": "https://github.com/robertsben333-cmyk/registratiesysteem-WoR/releases/download/v1.3.1/WoR-Registratie-1.3.1-windows.zip"
+    "url": "https://github.com/robertsben333-cmyk/registratiesysteem-WoR/releases/download/v1.3.2/WoR-Registratie-1.3.2-windows.zip"
   }
 }

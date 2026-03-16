@@ -1,13 +1,13 @@
 {% extends 'base.html' %}
 
-{% block title %}Cliënt toevoegen — WoR{% endblock %}
+{% block title %}Deelnemer toevoegen — WoR{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
   <div class="col-md-5">
     <div class="card">
       <div class="card-body p-4">
-        <h5 class="mb-3">Nieuwe cliënt toevoegen</h5>
+        <h5 class="mb-3">Nieuwe deelnemer toevoegen</h5>
 
         <form method="post" id="client-form">
           <div class="mb-3">
@@ -45,11 +45,11 @@ function checkVoornaam() {
   }
   const second = parts[1].replace(/\.$/, '');
   if (parts.length > 2 || second.length > 1) {
-    hint.textContent = 'Voer alleen de voornaam in, geen achternaam. Gebruik een initiaal (bijv. "Anna V.") als er al een cliënt met dezelfde voornaam bestaat.';
+    hint.textContent = 'Voer alleen de voornaam in, geen achternaam. Gebruik een initiaal (bijv. "Anna V.") als er al een deelnemer met dezelfde voornaam bestaat.';
     hint.className = 'form-text text-danger';
     return false;
   } else {
-    hint.textContent = 'Initiaal toegestaan als er al een cliënt met deze voornaam bestaat.';
+    hint.textContent = 'Initiaal toegestaan als er al een deelnemer met deze voornaam bestaat.';
     hint.className = 'form-text text-warning';
     return true;
   }

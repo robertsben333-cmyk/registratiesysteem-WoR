@@ -161,7 +161,7 @@ def client_add():
                 # Ziet eruit als een achternaam → blokkeren
                 flash(
                     'Voer alleen de voornaam in, geen achternaam. '
-                    'Gebruik een initiaal (bijv. "Anna V.") als er al een cliënt met dezelfde voornaam bestaat.',
+                    'Gebruik een initiaal (bijv. "Anna V.") als er al een deelnemer met dezelfde voornaam bestaat.',
                     'danger'
                 )
                 return render_template('client_add.html', voornaam=voornaam)
@@ -170,7 +170,7 @@ def client_add():
                 existing = get_clients_by_first_name(first_name)
                 if not existing:
                     flash(
-                        f'Een initiaal is alleen nodig als er al een cliënt met de voornaam "{first_name}" bestaat. '
+                        f'Een initiaal is alleen nodig als er al een deelnemer met de voornaam "{first_name}" bestaat. '
                         f'Bestaat de naam al? Voer anders alleen de voornaam in.',
                         'warning'
                     )
@@ -181,7 +181,7 @@ def client_add():
             exact_duplicates = [c for c in existing if c['voornaam'] == first_name]
             if exact_duplicates:
                 flash(
-                    f'Er bestaat al een cliënt met de naam "{first_name}". '
+                    f'Er bestaat al een deelnemer met de naam "{first_name}". '
                     f'Voeg een initiaal toe om ze te onderscheiden, bijv. "{first_name} A."',
                     'danger'
                 )
@@ -198,7 +198,7 @@ def client_delete(client_id):
     client = get_client(client_id)
     if client:
         delete_client(client_id)
-        flash(f'{client["voornaam"]} is verwijderd.', 'success')
+        flash(f'Deelnemer {client["voornaam"]} is verwijderd.', 'success')
     return redirect(url_for('main.index'))
 
 
@@ -231,7 +231,7 @@ def _parse_sw(form):
 def vragenlijst_1(client_id):
     client = get_client(client_id)
     if not client:
-        flash('Cliënt niet gevonden.', 'danger')
+        flash('Deelnemer niet gevonden.', 'danger')
         return redirect(url_for('main.index'))
 
     existing = get_vl1(client_id)
@@ -263,7 +263,7 @@ def vragenlijst_1(client_id):
 def vragenlijst_2(client_id):
     client = get_client(client_id)
     if not client:
-        flash('Cliënt niet gevonden.', 'danger')
+        flash('Deelnemer niet gevonden.', 'danger')
         return redirect(url_for('main.index'))
 
     existing = get_vl2(client_id)
@@ -341,7 +341,7 @@ def vragenlijst_2(client_id):
 def vragenlijst_3(client_id):
     client = get_client(client_id)
     if not client:
-        flash('Cliënt niet gevonden.', 'danger')
+        flash('Deelnemer niet gevonden.', 'danger')
         return redirect(url_for('main.index'))
 
     existing = get_vl3(client_id)
@@ -377,7 +377,7 @@ def vragenlijst_3(client_id):
 def vragenlijst_1_view(client_id):
     client = get_client(client_id)
     if not client:
-        flash('Cliënt niet gevonden.', 'danger')
+        flash('Deelnemer niet gevonden.', 'danger')
         return redirect(url_for('main.index'))
     vl1 = get_vl1(client_id)
     if not vl1:
@@ -393,7 +393,7 @@ def vragenlijst_1_view(client_id):
 def vragenlijst_2_view(client_id):
     client = get_client(client_id)
     if not client:
-        flash('Cliënt niet gevonden.', 'danger')
+        flash('Deelnemer niet gevonden.', 'danger')
         return redirect(url_for('main.index'))
     vl2 = get_vl2(client_id)
     if not vl2:
@@ -405,7 +405,7 @@ def vragenlijst_2_view(client_id):
 def vragenlijst_3_view(client_id):
     client = get_client(client_id)
     if not client:
-        flash('Cliënt niet gevonden.', 'danger')
+        flash('Deelnemer niet gevonden.', 'danger')
         return redirect(url_for('main.index'))
     vl3 = get_vl3(client_id)
     if not vl3:

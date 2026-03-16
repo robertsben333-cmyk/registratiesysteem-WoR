@@ -8,37 +8,39 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-
-<nav class="navbar navbar-expand-lg mb-4">
-  <div class="container d-flex justify-content-between align-items-center">
-    <a class="navbar-brand" href="{{ url_for('main.index') }}">
-      <span class="accent">●</span> Welzijn op Recept
-      <small class="fw-normal ms-2 opacity-75">
-        Registratie
-        <span class="opacity-50 ms-2">v{{ app_version }}</span>
-      </small>
-    </a>
-    {% if coach.naam %}
-    <div class="d-flex align-items-center gap-2">
-      {% if request.endpoint == 'main.dashboard' %}
-      <a href="{{ url_for('main.index') }}" class="btn btn-sm btn-navbar-ghost">Cliënten</a>
+<div class="app-shell">
+  <nav class="navbar navbar-expand-lg mb-4">
+    <div class="container d-flex justify-content-between align-items-center">
+      <a class="navbar-brand" href="{{ url_for('main.index') }}">
+        <span class="navbar-brand__mark">WoR</span>
+        <span>
+          Welzijn op Recept
+          <small>
+            Registratie <span class="navbar-version">v{{ app_version }}</span>
+          </small>
+        </span>
+      </a>
+      {% if coach.naam %}
+      <div class="navbar-meta">
+        {% if request.endpoint == 'main.dashboard' %}
+        <a href="{{ url_for('main.index') }}" class="btn btn-sm btn-navbar-ghost">Deelnemers</a>
+        {% else %}
+        <a href="{{ url_for('main.dashboard') }}" class="btn btn-sm btn-navbar-ghost">Dashboard</a>
+        {% endif %}
+        <div class="coach-chip">
+          <span class="coach-chip__name">{{ coach.naam }}</span>
+          <span class="coach-chip__meta">{{ coach.gemeente }}</span>
+          <span class="coach-id">#{{ coach.coach_id }}</span>
+        </div>
+        <a href="{{ url_for('main.coach_setup') }}" class="btn btn-sm btn-navbar-ghost">Instellingen</a>
+      </div>
       {% else %}
-      <a href="{{ url_for('main.dashboard') }}" class="btn btn-sm btn-navbar-ghost">Dashboard</a>
+      <a href="{{ url_for('main.coach_setup') }}" class="btn btn-sm btn-navbar-ghost">Coach instellen</a>
       {% endif %}
-      <span class="text-white opacity-75 small">
-        {{ coach.naam }}
-        <span class="opacity-50 ms-1">· {{ coach.gemeente }}</span>
-        <span class="coach-id opacity-40 ms-1">#{{ coach.coach_id }}</span>
-      </span>
-      <a href="{{ url_for('main.coach_setup') }}" class="btn btn-sm btn-navbar-ghost">Wijzigen</a>
     </div>
-    {% else %}
-    <a href="{{ url_for('main.coach_setup') }}" class="btn btn-sm btn-navbar-ghost">Coach instellen</a>
-    {% endif %}
-  </div>
-</nav>
+  </nav>
 
-<div class="container pb-5">
+  <div class="container pb-5">
 
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
@@ -53,6 +55,7 @@
 
   {% block content %}{% endblock %}
 
+  </div>
 </div>
 
 <script src="{{ url_for('static', filename='bootstrap.bundle.min.js') }}"></script>
