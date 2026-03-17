@@ -1,3 +1,3 @@
 APP_NAME = "WoR Registratie"
-APP_VERSION = "1.3.6"
+APP_VERSION = "1.3.7"
 UPDATE_MANIFEST_URL = "https://raw.githubusercontent.com/robertsben333-cmyk/registratiesysteem-WoR/master/latest.json"
