@@ -390,7 +390,7 @@ def get_dashboard_data(periode='alles', status='alle', radar_group='alle', radar
     vl3_ids = set(vl3_rows.keys())
     uitgevallen_ids_all = {cid for cid, row in vl2_rows.items() if _normalize_choice(row['uitval_ja_nee']) == 'ja'}
 
-    status_counts = {'alle': len(client_ids), 'actief': 0, 'afgerond': 0, 'uitgevallen': len(uitgevallen_ids_all)}
+    status_counts = {'alle': len(client_ids), 'actief': 0, 'afgerond': 0, 'uitgevallen': 0}
     status_by_id = {}
     for cid in client_ids:
         current_status = _client_status(cid, vl1_ids, uitgevallen_ids_all, vl2_rows, vl3_ids)
