@@ -167,7 +167,12 @@ def _download_release_asset(download_url, work_dir):
     try:
         with urlopen(request, timeout=30) as response:
             final_url = response.geturl() or download_url
-            filename = unquote(os.path.basename(urlparse(final_url).path)) or 'wor-update'
+            # Prefer the original URL for the filename: CDN redirect URLs often lack the extension
+            filename = (
+                unquote(os.path.basename(urlparse(download_url).path))
+                or unquote(os.path.basename(urlparse(final_url).path))
+                or 'wor-update'
+            )
             asset_path = os.path.join(work_dir, filename)
             with open(asset_path, 'wb') as f:
                 shutil.copyfileobj(response, f)
